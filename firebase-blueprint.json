@@ -1,0 +1,56 @@
+{
+  "collections": [
+    {
+      "name": "companies",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "gstin", "type": "string" },
+        { "name": "address", "type": "string" },
+        { "name": "createdAt", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "ledgers",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "group", "type": "string" },
+        { "name": "gstin", "type": "string" },
+        { "name": "openingBalance", "type": "number" },
+        { "name": "createdAt", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "vouchers",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "date", "type": "string" },
+        { "name": "number", "type": "string" },
+        { "name": "partyId", "type": "string" },
+        { "name": "totalAmount", "type": "number" },
+        { "name": "gstAmount", "type": "number" },
+        { "name": "tdsAmount", "type": "number" },
+        { "name": "items", "type": "map" },
+        { "name": "createdAt", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "bank_transactions",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "date", "type": "string" },
+        { "name": "description", "type": "string" },
+        { "name": "amount", "type": "number" },
+        { "name": "type", "type": "string" },
+        { "name": "isReconciled", "type": "boolean" },
+        { "name": "voucherId", "type": "string" },
+        { "name": "createdAt", "type": "timestamp" }
+      ]
+    }
+  ]
+}
