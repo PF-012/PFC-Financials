@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { Company } from '../types';
 
@@ -45,7 +45,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
     
     try {
       // Save payment request to Firestore so admin can see it
-      const { addDoc, collection } = await import('firebase/firestore');
+      const { addDoc, collection } = await import('../lib/firebase');
       await addDoc(collection(db, 'paymentRequests'), {
         companyId: activeCompany.id,
         companyName: activeCompany.name,
@@ -78,7 +78,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
       if (licenseKey === '12345' || licenseKey === '99999') {
          isValid = true;
       } else {
-         const { doc: firestoreDoc, getDoc } = await import('firebase/firestore');
+         const { doc: firestoreDoc, getDoc } = await import('../lib/firebase');
          const keyDoc = await getDoc(firestoreDoc(db, 'validKeys', licenseKey));
          if (keyDoc.exists() && !keyDoc.data().used) {
             isValid = true;

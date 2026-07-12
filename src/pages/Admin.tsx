@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircle2, XCircle, Clock, Copy, Search, ShieldCheck } from 'lucide-react';

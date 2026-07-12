@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, writeBatch, doc } from '../lib/firebase';
 import { Download, Upload, Loader2, FileJson, FileCode, Trash2, UploadCloud, FileScan } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';

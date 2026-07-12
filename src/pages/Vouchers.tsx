@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, getDocs, writeBatch } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { formatDate } from '../lib/utils';
 import { useAppContext } from '../context/AppContext';

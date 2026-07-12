@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Company } from '../types';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { FinancialYear, getFinancialYearDates, generateAvailableYears } from '../utils';

@@ -1,6 +1,6 @@
 import ConfirmModal from '../components/ConfirmModal';
 import React, { useState } from 'react';
-import { collection, addDoc, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, deleteDoc, writeBatch } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import DateInput from '../components/DateInput';
 import { formatDate } from '../lib/utils';
-import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from '../lib/firebase';
 import { BankTransaction, Voucher } from '../types';
 import { format } from 'date-fns';
 import { Check, X, FileCheck2, Plus } from 'lucide-react';
