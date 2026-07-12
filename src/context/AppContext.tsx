@@ -33,7 +33,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const q = query(collection(db, 'companies'), where('userId', '==', user.uid));
+    const q = query(collection(db, 'companies'), where('userId', '==', user.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const comps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
       setCompanies(comps);

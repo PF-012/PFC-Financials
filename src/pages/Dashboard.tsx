@@ -14,7 +14,7 @@ export default function Dashboard() {
 
   React.useEffect(() => {
     if (!activeCompany || !user || !financialYear) return;
-    const q = query(collection(db, 'vouchers'), where('userId', '==', user.uid));
+    const q = query(collection(db, 'vouchers'), where('userId', '==', user.id));
     const unsub = onSnapshot(q, (snap) => {
       let sales = 0;
       let purchases = 0;

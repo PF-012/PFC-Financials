@@ -68,7 +68,7 @@ export default function Vouchers() {
              await setDoc(newLedgerRef, {
                 name: parsed.partyName,
                 group: parsed.partyGroup || 'Sundry Creditors',
-                userId: user.uid,
+                userId: user.id,
                 companyId: activeCompany.id,
                 openingBalance: 0
              });
@@ -135,7 +135,7 @@ export default function Vouchers() {
   const handleDeleteAll = async () => {
     if (!activeCompany || !user) return;
     try {
-      const q = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.uid));
+      const q = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.id));
       const snap = await getDocs(q);
       const batch = writeBatch(db);
       snap.docs.forEach(d => batch.delete(d.ref));
@@ -314,10 +314,10 @@ export default function Vouchers() {
   
   useEffect(() => {
     if (!activeCompany || !user) return;
-    const vq = query(collection(db, 'vouchers'), where('userId', '==', user.uid));
+    const vq = query(collection(db, 'vouchers'), where('userId', '==', user.id));
     const unsubV = onSnapshot(vq, snap => setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)).filter(v => v.companyId === activeCompany.id)));
     
-    const lq = query(collection(db, 'ledgers'), where('userId', '==', user.uid));
+    const lq = query(collection(db, 'ledgers'), where('userId', '==', user.id));
     const unsubL = onSnapshot(lq, snap => setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id && String(l.name || '').trim() && l.name !== 'Unknown')));
 
     return () => { unsubV(); unsubL(); };
@@ -478,7 +478,7 @@ export default function Vouchers() {
       }
 
       const docRef = editingId ? doc(db, 'vouchers', editingId) : doc(collection(db, 'vouchers'));
-      await setDoc(docRef, { ...submitForm, companyId: activeCompany.id, userId: user.uid, createdAt: new Date().toISOString() }, { merge: true });
+      await setDoc(docRef, { ...submitForm, companyId: activeCompany.id, userId: user.id, createdAt: new Date().toISOString() }, { merge: true });
       
       if (!editingId && submitForm.type === 'Sales' && (submitForm.narration || '').includes('Tally')) {
          // Auto-create receipt voucher
@@ -503,7 +503,7 @@ export default function Vouchers() {
          else delete receiptForm.accountId;
          
          const receiptDocRef = doc(collection(db, 'vouchers'));
-         await setDoc(receiptDocRef, { ...receiptForm, companyId: activeCompany.id, userId: user.uid, createdAt: new Date().toISOString() }, { merge: true });
+         await setDoc(receiptDocRef, { ...receiptForm, companyId: activeCompany.id, userId: user.id, createdAt: new Date().toISOString() }, { merge: true });
       }
       setIsCreating(false);
       setEditingId(null);

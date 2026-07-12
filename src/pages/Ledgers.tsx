@@ -35,7 +35,7 @@ export default function Ledgers() {
       return;
     }
     try {
-      const q = query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.uid));
+      const q = query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.id));
       const snap = await getDocs(q);
       const batch = writeBatch(db);
       snap.docs.forEach(d => {
@@ -84,7 +84,7 @@ export default function Ledgers() {
 
   useEffect(() => {
     if (!activeCompany || !user) return;
-    const q = query(collection(db, 'ledgers'), where('userId', '==', user.uid));
+    const q = query(collection(db, 'ledgers'), where('userId', '==', user.id));
     const unsub = onSnapshot(q, (snap) => {
       setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id && String(l.name || '').trim() && l.name !== 'Unknown'));
     });
@@ -164,7 +164,7 @@ export default function Ledgers() {
     if (!activeCompany || !user) return;
     try {
       const docRef = editingId ? doc(db, 'ledgers', editingId) : doc(collection(db, 'ledgers'));
-      await setDoc(docRef, { ...form, companyId: activeCompany.id, userId: user.uid, createdAt: new Date().toISOString() }, { merge: true });
+      await setDoc(docRef, { ...form, companyId: activeCompany.id, userId: user.id, createdAt: new Date().toISOString() }, { merge: true });
       setIsCreating(false);
       setEditingId(null);
       setForm(initialForm);

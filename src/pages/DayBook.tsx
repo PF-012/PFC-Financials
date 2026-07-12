@@ -46,7 +46,7 @@ export default function DayBook() {
       return;
     }
     try {
-      const q = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.uid));
+      const q = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.id));
       const snap = await getDocs(q);
       const batch = writeBatch(db);
       snap.docs.forEach(d => batch.delete(d.ref));
@@ -82,7 +82,7 @@ export default function DayBook() {
 
     const ledgersQuery = query(
       collection(db, 'ledgers'),
-      where('userId', '==', user.uid)
+      where('userId', '==', user.id)
     );
     const unsubscribeLedgers = onSnapshot(ledgersQuery, (snapshot) => {
       setLedgers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id));
@@ -96,7 +96,7 @@ export default function DayBook() {
 
     const q = query(
       collection(db, 'vouchers'),
-      where('userId', '==', user.uid)
+      where('userId', '==', user.id)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {

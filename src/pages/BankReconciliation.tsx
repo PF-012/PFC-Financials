@@ -21,12 +21,12 @@ export default function BankReconciliation() {
 
   useEffect(() => {
     if (!activeCompany || !user) return;
-    const q = query(collection(db, 'bank_transactions'), where('companyId', '==', activeCompany.id), where('userId', '==', user.uid));
+    const q = query(collection(db, 'bank_transactions'), where('companyId', '==', activeCompany.id), where('userId', '==', user.id));
     const unsub = onSnapshot(q, snap => {
       setTransactions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BankTransaction)));
     });
     
-    const vq = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.uid));
+    const vq = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id), where('userId', '==', user.id));
     const unsubV = onSnapshot(vq, snap => {
       setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)));
     });
@@ -38,7 +38,7 @@ export default function BankReconciliation() {
     if (!activeCompany || !user) return;
     
     await addDoc(collection(db, 'bank_transactions'), {
-      userId: user.uid,
+      userId: user.id,
       companyId: activeCompany.id,
       date: form.date,
       description: form.desc,

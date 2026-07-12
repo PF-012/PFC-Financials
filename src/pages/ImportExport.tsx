@@ -101,7 +101,7 @@ export default function ImportExport() {
     setLoading(true);
     setMessage('');
     try {
-      const q = query(collection(db, type), where('companyId', '==', activeCompany.id), where('userId', '==', user.uid));
+      const q = query(collection(db, type), where('companyId', '==', activeCompany.id), where('userId', '==', user.id));
       const snap = await getDocs(q);
       
       const batch = writeBatch(db);
@@ -126,7 +126,7 @@ export default function ImportExport() {
       const q = query(
         collection(db, type),
         where('companyId', '==', activeCompany.id),
-        where('userId', '==', user.uid)
+        where('userId', '==', user.id)
       );
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => {
@@ -417,7 +417,7 @@ let mappedData: any[] = [];
          batch.set(docRef, {
            ...item,
            companyId: activeCompany.id,
-           userId: user.uid,
+           userId: user.id,
            importedAt: new Date().toISOString()
          });
          addedCount++;
@@ -429,7 +429,7 @@ let mappedData: any[] = [];
              if (!ledger) {
                  // Auto-create missing ledger
                  const newLedgerRef = doc(collection(db, 'ledgers'));
-                 const newLedger = { name: item.partyId, group: 'Sundry Debtors', companyId: activeCompany.id, userId: user.uid };
+                 const newLedger = { name: item.partyId, group: 'Sundry Debtors', companyId: activeCompany.id, userId: user.id };
                  batch.set(newLedgerRef, newLedger);
                  ledger = { id: newLedgerRef.id, ...newLedger };
                  existingLedgers.push(ledger);
@@ -441,7 +441,7 @@ let mappedData: any[] = [];
              if (!ledger) {
                  // Auto-create missing ledger
                  const newLedgerRef = doc(collection(db, 'ledgers'));
-                 const newLedger = { name: item.accountId, group: 'Sales Accounts', companyId: activeCompany.id, userId: user.uid };
+                 const newLedger = { name: item.accountId, group: 'Sales Accounts', companyId: activeCompany.id, userId: user.id };
                  batch.set(newLedgerRef, newLedger);
                  ledger = { id: newLedgerRef.id, ...newLedger };
                  existingLedgers.push(ledger);
@@ -454,7 +454,7 @@ let mappedData: any[] = [];
       batch.set(docRef, {
         ...item,
         companyId: activeCompany.id,
-        userId: user.uid,
+        userId: user.id,
         importedAt: new Date().toISOString()
       });
       addedCount++;
@@ -548,7 +548,7 @@ let mappedData: any[] = [];
                  const newLedger = {
                     name: parsed.partyName,
                     group: parsed.partyGroup || 'Sundry Creditors',
-                    userId: user.uid,
+                    userId: user.id,
                     companyId: activeCompany.id,
                     openingBalance: 0
                  };
@@ -588,7 +588,7 @@ let mappedData: any[] = [];
                itemName: parsed.itemName || '',
                narration: 'Auto-imported from ' + file.name,
                companyId: activeCompany.id,
-               userId: user.uid,
+               userId: user.id,
                createdAt: new Date().toISOString()
             }).commit();
             
