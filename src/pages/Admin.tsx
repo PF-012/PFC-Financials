@@ -42,7 +42,7 @@ export default function Admin() {
       snapshot.forEach((doc) => {
         data.push({ id: doc.id, ...doc.data() } as Company);
       });
-      setCompanies(data);
+      setCompanies(data); console.log("Admin companies length:", data.length, data.map(d => d.name));
     });
 
     return () => {
@@ -111,9 +111,10 @@ export default function Admin() {
     }
   };
 
+  console.log('ALL COMPANIES:', companies);
   const filteredCompanies = React.useMemo(() => companies.filter(c =>
     (c.license && c.license.type !== 'free') &&
-    (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.email.includes(searchTerm))
+    (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.email || '').includes(searchTerm))
   ), [companies, searchTerm]);
 
   const formatDate = (dateString: string) => {
