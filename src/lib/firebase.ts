@@ -52,12 +52,15 @@ export async function getDocs(queryObj: any) {
   const { data, error } = await builder;
   if (error) throw error;
   
+  const docs = (data || []).map((row: any) => ({
+    id: row.id,
+    data: () => row,
+    ref: { type: 'doc', path: queryObj.path, id: row.id }
+  }));
+  
   return {
-    docs: (data || []).map((row: any) => ({
-      id: row.id,
-      data: () => row,
-      ref: { type: 'doc', path: queryObj.path, id: row.id }
-    }))
+    docs,
+    forEach: (cb: (doc: any) => void) => docs.forEach(cb)
   };
 }
 
@@ -99,7 +102,8 @@ export function onSnapshot(queryObj: any, callback: (snapshot: any) => void) {
   getDocs(queryObj).then(callback).catch(console.error);
 
   // Subscribe to realtime
-  const channel = supabase.channel(`public:${queryObj.path}`)
+  const channelId = `public:${queryObj.path}-${Math.random().toString(36).substring(7)}`;
+  const channel = supabase.channel(channelId)
     .on('postgres_changes', { event: '*', schema: 'public', table: queryObj.path }, payload => {
       // Re-fetch everything on change for simplicity, to match the snapshot behaviour correctly
       // In a production app, you'd merge the payload manually.
