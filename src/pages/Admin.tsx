@@ -76,8 +76,9 @@ export default function Admin() {
         status: 'approved',
         licenseKey: key
       });
-    } catch (err) {
-      alert("Failed to approve payment: " + err);
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to approve payment: " + (err.message || JSON.stringify(err)));
     }
   };
 
@@ -86,8 +87,9 @@ export default function Admin() {
       await updateDoc(doc(db, 'paymentRequests', id), {
         status: 'rejected'
       });
-    } catch (err) {
-      alert("Failed to reject payment: " + err);
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to reject payment: " + (err.message || JSON.stringify(err)));
     }
   };
 
