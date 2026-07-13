@@ -177,7 +177,7 @@ export default function Vouchers() {
   const [fromDate, setFromDate] = useState(financialYear.start);
   const [toDate, setToDate] = useState(financialYear.end);
 
-      const filteredVouchers = vouchers.filter(v => {
+  const filteredVouchers = React.useMemo(() => vouchers.filter(v => {
     const party = String(ledgers.find(l => l.id === v.partyId)?.name || v.partyId || '');
     const type = String(v.type || '');
     const number = String(v.number || '');
@@ -189,7 +189,7 @@ export default function Vouchers() {
     return matchesSearch && matchesDate && matchesType;
   }).sort((a, b) => {
     const typeOrder = ["Purchase","Sales","Payment","Receipt","Journal","Contra","Credit Note","Debit Note","Sales Order","Purchase Order"];
-    const getOrder = (t) => {
+    const getOrder = (t: string) => {
       const idx = typeOrder.indexOf(t);
       return idx === -1 ? 999 : idx;
     };
@@ -202,7 +202,7 @@ export default function Vouchers() {
     
     // Finally sort by Date if numbers are same
     return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
+  }), [vouchers, ledgers, searchTerm, fromDate, toDate, typeFilter]);
 
   useEffect(() => {
     setFromDate(financialYear.start);

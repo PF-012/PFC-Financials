@@ -7,11 +7,11 @@ export function collection(db: any, path: string) {
   return { type: 'collection', path };
 }
 
-export function doc(db: any, path: string, id: string) {
+export function doc(db: any, path?: string, id?: string) {
   if (typeof db === 'object' && db.type === 'collection') {
-    return { type: 'doc', path: db.path, id: path };
+    return { type: 'doc', path: db.path, id: path || Math.random().toString(36).substring(2, 15) };
   }
-  return { type: 'doc', path, id };
+  return { type: 'doc', path: path, id: id || Math.random().toString(36).substring(2, 15) };
 }
 
 export function where(field: string, op: string, value: any) {
@@ -121,12 +121,15 @@ export function writeBatch(db: any) {
   return {
     set(docObj: any, data: any) {
       operations.push({ type: 'set', doc: docObj, data });
+      return this;
     },
     update(docObj: any, data: any) {
       operations.push({ type: 'update', doc: docObj, data });
+      return this;
     },
     delete(docObj: any) {
       operations.push({ type: 'delete', doc: docObj });
+      return this;
     },
     async commit() {
       // Supabase RPC or individual calls (we'll do individual for simplicity)

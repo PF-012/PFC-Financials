@@ -93,36 +93,34 @@ export default function DayBook() {
 
   useEffect(() => {
     if (!activeCompany || !user) return;
-
     const q = query(
       collection(db, 'vouchers'),
       where('userId', '==', user.id)
     );
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let v = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher));
-      v = v.filter(voucher => voucher.companyId === activeCompany.id && voucher.date >= fromDate && voucher.date <= toDate && (typeFilter ? voucher.type === typeFilter : true));
-      v.sort((a, b) => {
-    const typeOrder = ["Purchase","Sales","Payment","Receipt","Journal","Contra","Credit Note","Debit Note","Sales Order","Purchase Order"];
-    const getOrder = (t) => {
-      const idx = typeOrder.indexOf(t);
-      return idx === -1 ? 999 : idx;
-    };
-    const typeDiff = getOrder(a.type) - getOrder(b.type);
-    if (typeDiff !== 0) return typeDiff;
-    
-    // Sort by Number numeric ascending
-    const numSort = String(a.number || '').localeCompare(String(b.number || ''), undefined, { numeric: true });
-    if (numSort !== 0) return numSort;
-    
-    // Finally sort by Date if numbers are same
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
-      setVouchers(v);
+      setVouchers(v.filter(voucher => voucher.companyId === activeCompany.id));
     });
-
     return () => unsubscribe();
-  }, [activeCompany, user, fromDate, toDate, typeFilter]);
+  }, [activeCompany, user]);
+
+  const filteredVouchers = React.useMemo(() => {
+    let v = vouchers.filter(voucher => voucher.date >= fromDate && voucher.date <= toDate && (typeFilter ? voucher.type === typeFilter : true));
+    return v.sort((a, b) => {
+      const typeOrder = ["Purchase","Sales","Payment","Receipt","Journal","Contra","Credit Note","Debit Note","Sales Order","Purchase Order"];
+      const getOrder = (t) => {
+        const idx = typeOrder.indexOf(t);
+        return idx === -1 ? 999 : idx;
+      };
+      const typeDiff = getOrder(a.type) - getOrder(b.type);
+      if (typeDiff !== 0) return typeDiff;
+      
+      const numSort = String(a.number || '').localeCompare(String(b.number || ''), undefined, { numeric: true });
+      if (numSort !== 0) return numSort;
+      
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+  }, [vouchers, fromDate, toDate, typeFilter]);
 
   const handleEdit = (v: Voucher) => {
     navigate('/vouchers', { state: { editVoucher: v } });

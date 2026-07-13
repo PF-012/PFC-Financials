@@ -93,11 +93,11 @@ export default function Admin() {
     }
   };
 
-  const filteredRequests = requests.filter(r => 
+  const filteredRequests = React.useMemo(() => requests.filter(r => 
     r.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     r.whatsapp.includes(searchTerm) || 
     r.txnId.includes(searchTerm)
-  );
+  ), [requests, searchTerm]);
 
   const handleToggleBan = async (companyId: string, currentStatus: boolean | undefined) => {
     if (confirm(currentStatus ? 'Are you sure you want to unban this company?' : 'Are you sure you want to ban this company? They will lose access to premium features.')) {
@@ -111,10 +111,10 @@ export default function Admin() {
     }
   };
 
-  const filteredCompanies = companies.filter(c =>
+  const filteredCompanies = React.useMemo(() => companies.filter(c =>
     (c.license && c.license.type !== 'free') &&
     (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.email.includes(searchTerm))
-  );
+  ), [companies, searchTerm]);
 
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
@@ -167,6 +167,7 @@ export default function Admin() {
 
         <div className="overflow-x-auto">
           {activeTab === 'requests' ? (
+            React.useMemo(() => (
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -232,7 +233,9 @@ export default function Admin() {
                 )}
               </tbody>
             </table>
+          ), [filteredRequests])
           ) : (
+            React.useMemo(() => (
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -317,6 +320,7 @@ export default function Admin() {
                 )}
               </tbody>
             </table>
+          ), [filteredCompanies])
           )}
         </div>
       </div>

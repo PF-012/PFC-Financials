@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fipzbbqfajcyyhyrtnzr.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpcHpiYnFmYWpjeXloeXJ0bnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NTgzOTksImV4cCI6MjA5OTQzNDM5OX0.AKFMaGGS8iyFOAP69QelZecCX9T0YVc2lJ9NjODN6MQ';
+// Fallbacks are provided to prevent the app from crashing on load when environment variables are not set.
+// You must set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment to use Supabase auth.
+const supabaseUrl = (typeof process !== 'undefined' && process.env ? process.env.VITE_SUPABASE_URL : undefined) || import.meta.env?.VITE_SUPABASE_URL || 'https://xyzcompany.supabase.co';
+const supabaseKey = (typeof process !== 'undefined' && process.env ? process.env.VITE_SUPABASE_ANON_KEY : undefined) || import.meta.env?.VITE_SUPABASE_ANON_KEY || 'public-anon-key';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);

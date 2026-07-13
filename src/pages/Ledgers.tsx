@@ -113,12 +113,12 @@ export default function Ledgers() {
 
 
 
-  const filteredLedgers = ledgers.filter(l => {
+  const filteredLedgers = React.useMemo(() => ledgers.filter(l => {
     const name = String(l.name || '').trim();
     if (!name || name === 'Unknown') return false;
     return name.toLowerCase().includes((searchTerm || '').toLowerCase()) ||
            String(l.group || '').toLowerCase().includes((searchTerm || '').toLowerCase());
-  });
+  }), [ledgers, searchTerm]);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && (e.key || '').toLowerCase() === 'n') {
