@@ -135,7 +135,7 @@ export default function Companies() {
             <p className="mt-2 text-sm text-gray-500">Create a company to get started.</p>
          </div>
       ) : (
-         React.useMemo(() => (
+         (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {companies.map(c => {
                const isActive = activeCompany?.id === c.id;
@@ -166,7 +166,7 @@ export default function Companies() {
                )
             })}
          </div>
-), [companies, activeCompany?.id])
+)
       )}
     
       <ConfirmModal

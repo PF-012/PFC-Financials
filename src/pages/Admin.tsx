@@ -167,7 +167,6 @@ export default function Admin() {
 
         <div className="overflow-x-auto">
           {activeTab === 'requests' ? (
-            React.useMemo(() => (
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -233,9 +232,7 @@ export default function Admin() {
                 )}
               </tbody>
             </table>
-          ), [filteredRequests])
           ) : (
-            React.useMemo(() => (
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -320,7 +317,6 @@ export default function Admin() {
                 )}
               </tbody>
             </table>
-          ), [filteredCompanies])
           )}
         </div>
       </div>
