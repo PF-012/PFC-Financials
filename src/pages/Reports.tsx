@@ -265,7 +265,7 @@ export default function Reports() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
            <h1 className="text-2xl font-semibold text-blue-900">Reports</h1>
-           <p className="text-sm text-red-500">DEBUG | Vouchers total: {reportData?.allVouchers?.length} | fromDate: {fromDate} | toDate: {toDate} | Sales: {reportData?.totalSales}</p>
+           <p className="text-sm text-red-500">DEBUG | Vouchers: {reportData?.allVouchers?.length} | Ledgers: {reportData?.allLedgers?.length} | Sales: {reportData?.totalSales} | SL: {reportData?.allLedgers?.filter(l=>l.group==='Sales Accounts').map(l=>l.name + '=' + reportData.currentChanges[l.id]).join(', ')}</p>
         </div>
         <div className="flex items-center gap-2">
            <label className="text-sm text-gray-600">From:</label>

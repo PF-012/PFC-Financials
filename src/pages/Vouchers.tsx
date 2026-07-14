@@ -403,6 +403,7 @@ export default function Vouchers() {
     if (!submitForm.itemName) delete submitForm.itemName;
     if (!submitForm.items || submitForm.items.length === 0) delete submitForm.items;
 
+    if (!submitForm.accountId && submitForm.type !== 'Journal') { alert('Please select an Account (Sales/Purchase/Cash/Bank)'); return; }
     if (!forceSave) {
         setIsVerifying(true);
         setAiWarning(null);
@@ -613,6 +614,9 @@ export default function Vouchers() {
                      onChange={val => setForm({...form, accountId: val})}
                      options={ledgers.filter(l => {
                         if (form.type === 'Contra') return ['Cash-in-Hand', 'Bank Accounts'].includes(l.group);
+                        if (form.type === 'Sales' || form.type === 'Credit Note') return ['Sales Accounts', 'Direct Incomes', 'Indirect Incomes'].includes(l.group);
+                        if (form.type === 'Purchase' || form.type === 'Debit Note') return ['Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'].includes(l.group);
+                        if (form.type === 'Receipt' || form.type === 'Payment') return ['Cash-in-Hand', 'Bank Accounts'].includes(l.group);
                         return true;
                      })}
                      onEdit={(id) => {
