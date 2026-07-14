@@ -80,11 +80,11 @@ export default function Reports() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const vq = query(collection(db, 'vouchers'), where('userId', '==', user?.uid));
+      const vq = query(collection(db, 'vouchers'), where('userId', '==', user?.id));
       const vSnap = await getDocs(vq);
       const allVouchers = vSnap.docs.filter(doc => doc.data().companyId === activeCompany?.id).map(doc => ({ id: doc.id, ...doc.data() } as Voucher));
 
-      const lq = query(collection(db, 'ledgers'), where('userId', '==', user?.uid));
+      const lq = query(collection(db, 'ledgers'), where('userId', '==', user?.id));
       const lSnap = await getDocs(lq);
       const ledgers = lSnap.docs.filter(doc => doc.data().companyId === activeCompany?.id).map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => {
     const name = String(l.name || '').trim();
@@ -242,7 +242,7 @@ export default function Reports() {
       });
 
     } catch (error) {
-      console.error(error);
+      console.error(error); alert(error.message || "Error loading reports");
     } finally {
       setLoading(false);
     }
