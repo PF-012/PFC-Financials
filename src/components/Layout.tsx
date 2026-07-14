@@ -80,7 +80,7 @@ export default function Layout() {
                      }`}
                   >
                      {item.icon}
-                     <span>{item.label.split(' (')[0]} <span className="text-xs text-gray-400 ml-1">(Alt+{index + 1})</span></span>
+                     <span>{item.label}</span>
                   </Link>
                )
             })}
