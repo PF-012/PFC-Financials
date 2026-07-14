@@ -397,6 +397,11 @@ export default function Vouchers() {
     }
 
     let submitForm = { ...form };
+    
+    // Clean up empty optional fields so Supabase doesn't complain if schema is outdated
+    if (!submitForm.againstReference) delete submitForm.againstReference;
+    if (!submitForm.itemName) delete submitForm.itemName;
+    if (!submitForm.items || submitForm.items.length === 0) delete submitForm.items;
 
     if (!forceSave) {
         setIsVerifying(true);

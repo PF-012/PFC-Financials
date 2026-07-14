@@ -83,6 +83,7 @@ create table vouchers (
   "igstRate" numeric,
   "isSystem" boolean default false,
   "tdsAmount" numeric,
+  "againstReference" text,
   narration text,
   "itemName" text,
   items jsonb

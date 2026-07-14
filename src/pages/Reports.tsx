@@ -80,11 +80,11 @@ export default function Reports() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const vq = query(collection(db, 'vouchers'), where('userId', '==', user?.id));
+      const vq = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany?.id), where('userId', '==', user?.id));
       const vSnap = await getDocs(vq);
       const allVouchers = vSnap.docs.filter(doc => doc.data().companyId === activeCompany?.id).map(doc => ({ id: doc.id, ...doc.data() } as Voucher));
 
-      const lq = query(collection(db, 'ledgers'), where('userId', '==', user?.id));
+      const lq = query(collection(db, 'ledgers'), where('companyId', '==', activeCompany?.id), where('userId', '==', user?.id));
       const lSnap = await getDocs(lq);
       const ledgers = lSnap.docs.filter(doc => doc.data().companyId === activeCompany?.id).map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => {
     const name = String(l.name || '').trim();
@@ -104,6 +104,7 @@ export default function Reports() {
       const prevChanges: Record<string, number> = {};
 
       const relevantVouchers = allVouchers.filter(v => v.date <= toDate);
+      console.log('Reports fetched vouchers:', allVouchers.length, 'relevant:', relevantVouchers.length);
       const currentVouchers = relevantVouchers.filter(v => v.date >= fromDate);
 
       relevantVouchers.forEach(v => {
@@ -264,7 +265,7 @@ export default function Reports() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
            <h1 className="text-2xl font-semibold text-blue-900">Reports</h1>
-           <p className="text-sm text-gray-500">Financial Performance</p>
+           <p className="text-sm text-red-500">DEBUG | Vouchers total: {reportData?.allVouchers?.length} | fromDate: {fromDate} | toDate: {toDate} | Sales: {reportData?.totalSales}</p>
         </div>
         <div className="flex items-center gap-2">
            <label className="text-sm text-gray-600">From:</label>
@@ -449,85 +450,68 @@ export default function Reports() {
            <table className="min-w-full text-left border-collapse">
              <thead>
                <tr className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                 <th className="px-6 py-3">Particulars</th>
+                 <th className="px-6 py-3">Ledger Name</th>
+                 <th className="px-6 py-3">Group</th>
                  <th className="px-6 py-3 text-right">Debit (₹)</th>
                  <th className="px-6 py-3 text-right">Credit (₹)</th>
                </tr>
              </thead>
              <tbody className="divide-y divide-gray-200 bg-white">
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Sales Accounts', 'ledgers', l => l.group === 'Sales Accounts')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Sales Accounts</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.totalSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Purchase Accounts', 'ledgers', l => l.group === 'Purchase Accounts')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Purchase Accounts</td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.totalPurchases.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Direct Expenses', 'ledgers', l => l.group === 'Direct Expenses')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Direct Expenses</td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.directExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Indirect Expenses', 'ledgers', l => l.group === 'Indirect Expenses')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Indirect Expenses</td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.indirectExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Indirect Incomes', 'ledgers', l => l.group === 'Indirect Incomes')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Indirect Incomes</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.indirectIncomes.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Direct Incomes', 'ledgers', l => l.group === 'Direct Incomes')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Direct Incomes</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.directIncomes.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Sundry Debtors / Current Assets', 'ledgers', l => ['Current Assets', 'Sundry Debtors', 'Cash-in-Hand', 'Bank Accounts'].includes(l.group))}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Current Assets</td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.currentAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Fixed Assets', 'ledgers', l => l.group === 'Fixed Assets')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Fixed Assets</td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.fixedAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Sundry Creditors / Current Liabilities', 'ledgers', l => ['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group))}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Current Liabilities</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.currentLiabilities.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-               </tr>
-               <tr className={`cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 transition-colors`} onClick={() => handleBreakdown('Capital Account', 'ledgers', l => l.group === 'Capital Account')}>
-                 <td className="px-6 py-4 text-sm text-blue-600 font-medium underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600">Capital Account</td>
-                 <td className="px-6 py-4 text-sm text-right"></td>
-                 <td className="px-6 py-4 text-sm text-right font-medium">{reportData.capital.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-               </tr>
-               {reportData.prevNetProfit !== 0 && (
-                  <tr>
-                     <td className="px-6 py-4 text-sm text-gray-700">Retained Earnings (Previous Years P&L)</td>
-                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.prevNetProfit < 0 ? Math.abs(reportData.prevNetProfit).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
-                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.prevNetProfit > 0 ? reportData.prevNetProfit.toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
-                  </tr>
-               )}
+               {reportData.allLedgers.map((l: any) => {
+                 let bal = reportData.ledgerBalances[l.id] || 0;
+                 if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
+                    bal = reportData.currentChanges[l.id] || 0;
+                 }
+                 if (l.group === 'Capital Account') bal = -(reportData.ledgerBalances[l.id] || 0);
+                 if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -(reportData.ledgerBalances[l.id] || 0);
+                 
+                 // P&L items: Incomes are credit (negative bal here means credit), Expenses are debit (positive)
+                 if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
+                 
+                 if (Math.abs(bal) < 0.01) return null;
+                 return (
+                   <tr key={l.id} className="hover:bg-gray-50">
+                     <td className="px-6 py-4 text-sm text-gray-900">{l.name}</td>
+                     <td className="px-6 py-4 text-sm text-gray-500">{l.group}</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{bal > 0 ? bal.toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{bal < 0 ? Math.abs(bal).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                   </tr>
+                 );
+               })}
              </tbody>
              <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                <tr>
-                 <td className="px-6 py-4 text-sm font-semibold text-blue-900">Total</td>
+                 <td colSpan={2} className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Total:</td>
                  <td className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">
-                   {(reportData.totalPurchases + reportData.currentAssets + reportData.fixedAssets + reportData.directExpenses + reportData.indirectExpenses + Math.max(0, -reportData.prevNetProfit)).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                   {reportData.allLedgers.reduce((sum: number, l: any) => {
+                       let bal = reportData.ledgerBalances[l.id] || 0;
+                       if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
+                          bal = reportData.currentChanges[l.id] || 0;
+                       }
+                       if (l.group === 'Capital Account') bal = -(reportData.ledgerBalances[l.id] || 0);
+                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -(reportData.ledgerBalances[l.id] || 0);
+                       if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
+                       return sum + (bal > 0 ? bal : 0);
+                   }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>
                  <td className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">
-                   {(reportData.totalSales + reportData.directIncomes + reportData.currentLiabilities + reportData.capital + reportData.indirectIncomes + Math.max(0, reportData.prevNetProfit)).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                   {reportData.allLedgers.reduce((sum: number, l: any) => {
+                       let bal = reportData.ledgerBalances[l.id] || 0;
+                       if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
+                          bal = reportData.currentChanges[l.id] || 0;
+                       }
+                       if (l.group === 'Capital Account') bal = -(reportData.ledgerBalances[l.id] || 0);
+                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -(reportData.ledgerBalances[l.id] || 0);
+                       if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
+                       return sum + (bal < 0 ? Math.abs(bal) : 0);
+                   }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>
                </tr>
              </tfoot>
            </table>
         </div>
       )}
-
+      
       {activeReport === 'cashFlow' && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
