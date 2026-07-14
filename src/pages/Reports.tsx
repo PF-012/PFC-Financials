@@ -163,18 +163,20 @@ export default function Reports() {
             if (v.partyId) applyToLedger(v.partyId, ((v.totalAmount || 0) - (v.tdsAmount || 0)));
         } else if (v.type === 'Receipt') {
             const isCashBank = v.accountId && ['Bank Accounts', 'Cash-in-Hand'].includes(getLedgerGroup(v.accountId) || '');
+            if (isCurrent) totalReceipts += baseAmt;
             if (isCashBank) {
                 applyToLedger(v.accountId, baseAmt);
             } else {
-                if (isCurrent) { totalReceipts += baseAmt; unassignedReceipts += baseAmt; }
+                if (isCurrent) unassignedReceipts += baseAmt;
             }
             if (v.partyId) applyToLedger(v.partyId, -baseAmt);
         } else if (v.type === 'Payment') {
             const isCashBank = v.accountId && ['Bank Accounts', 'Cash-in-Hand'].includes(getLedgerGroup(v.accountId) || '');
+            if (isCurrent) totalPayments += baseAmt;
             if (isCashBank) {
                 applyToLedger(v.accountId, -baseAmt);
             } else {
-                if (isCurrent) { totalPayments += baseAmt; unassignedPayments += baseAmt; }
+                if (isCurrent) unassignedPayments += baseAmt;
             }
             if (v.partyId) applyToLedger(v.partyId, baseAmt);
         } else if (v.type === 'Contra') {
