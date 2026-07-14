@@ -103,6 +103,10 @@ export default function DayBook() {
   const filteredVouchers = React.useMemo(() => {
     let v = vouchers.filter(voucher => voucher.date >= fromDate && voucher.date <= toDate && (typeFilter ? voucher.type === typeFilter : true));
     return v.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      if (dateA !== dateB) return dateA - dateB;
+
       const typeOrder = ["Purchase","Sales","Payment","Receipt","Journal","Contra","Credit Note","Debit Note","Sales Order","Purchase Order"];
       const getOrder = (t) => {
         const idx = typeOrder.indexOf(t);
@@ -111,10 +115,7 @@ export default function DayBook() {
       const typeDiff = getOrder(a.type) - getOrder(b.type);
       if (typeDiff !== 0) return typeDiff;
       
-      const numSort = String(a.number || '').localeCompare(String(b.number || ''), undefined, { numeric: true });
-      if (numSort !== 0) return numSort;
-      
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return String(a.number || '').localeCompare(String(b.number || ''), undefined, { numeric: true });
     });
   }, [vouchers, fromDate, toDate, typeFilter]);
 
@@ -176,35 +177,35 @@ export default function DayBook() {
          }
       }
 
-      if (vouchers.length === 0) return;
+      if (filteredVouchers.length === 0) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex(prev => (prev < vouchers.length - 1 ? prev + 1 : prev));
+        setSelectedIndex(prev => (prev < filteredVouchers.length - 1 ? prev + 1 : prev));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex(prev => (prev > 0 ? prev - 1 : prev));
       } else if (e.key === 'Enter') {
-        if (selectedIndex >= 0 && selectedIndex < vouchers.length) {
+        if (selectedIndex >= 0 && selectedIndex < filteredVouchers.length) {
           e.preventDefault();
-          handleEdit(vouchers[selectedIndex]);
+          handleEdit(filteredVouchers[selectedIndex]);
         }
       } else if (e.altKey && (e.key || '').toLowerCase() === 'd') {
         if (selectedIds && selectedIds.length > 0) {
           e.preventDefault();
           setDeleteSelectedConfirm(true);
-        } else if (selectedIndex >= 0 && selectedIndex < vouchers.length) {
+        } else if (selectedIndex >= 0 && selectedIndex < filteredVouchers.length) {
           e.preventDefault();
-          setDeleteConfirm(vouchers[selectedIndex].id);
+          setDeleteConfirm(filteredVouchers[selectedIndex].id);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [vouchers, selectedIndex, selectedIds]);
+  }, [filteredVouchers, selectedIndex, selectedIds]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(vouchers.map(v => v.id));
+      setSelectedIds(filteredVouchers.map(v => v.id));
     } else {
       setSelectedIds([]);
     }
@@ -261,7 +262,7 @@ export default function DayBook() {
                         <input 
                            type="checkbox" 
                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                           checked={vouchers.length > 0 && selectedIds.length === vouchers.length}
+                           checked={filteredVouchers.length > 0 && selectedIds.length === filteredVouchers.length}
                            onChange={handleSelectAll}
                         />
                      </th>
@@ -295,14 +296,14 @@ export default function DayBook() {
                   </tr>
                </thead>
                <tbody className="bg-white divide-y divide-gray-200">
-                  {vouchers.length === 0 ? (
+                  {filteredVouchers.length === 0 ? (
                      <tr>
                         <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
                            No transactions found for the selected period.
                         </td>
                      </tr>
                   ) : (
-                     vouchers.map((v, index) => {
+                     filteredVouchers.map((v, index) => {
                         const party = ledgers.find(l => l.id === v.partyId)?.name || 'Unknown';
                         const { debit, credit } = getDebitCreditAmount(v);
                         if (debit) totalDebit += debit;

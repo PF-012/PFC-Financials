@@ -118,47 +118,71 @@ export default function Reports() {
            else prevChanges[id] = (prevChanges[id] || 0) + amt;
         };
 
-        if (v.type === 'Sales') {
-            if (v.accountId) applyToLedger(v.accountId, -baseAmt);
-            else if (isCurrent) { totalSales += baseAmt; unassignedSales += baseAmt; }
-            else prevTotalSales += baseAmt;
+        const getLedgerGroup = (id: string) => ledgers.find(l => l.id === id)?.group;
 
-            unassignedDuties -= totalGst; // Cr Duties
+
+        if (v.type === 'Sales') {
+            const isSalesAccount = v.accountId && ['Sales Accounts', 'Direct Incomes', 'Indirect Incomes'].includes(getLedgerGroup(v.accountId) || '');
+            if (isSalesAccount) {
+                applyToLedger(v.accountId, -baseAmt);
+            } else {
+                if (isCurrent) { totalSales += baseAmt; unassignedSales += baseAmt; }
+                else prevTotalSales += baseAmt;
+            }
+            unassignedDuties -= totalGst;
             if (v.partyId) applyToLedger(v.partyId, ((v.totalAmount || 0) - (v.tdsAmount || 0)));
         } else if (v.type === 'Purchase') {
-            if (v.accountId) applyToLedger(v.accountId, baseAmt);
-            else if (isCurrent) { totalPurchases += baseAmt; unassignedPurchases += baseAmt; }
-            else prevTotalPurchases += baseAmt;
-
-            unassignedDuties += totalGst; // Dr Duties
+            const isPurchaseAccount = v.accountId && ['Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'].includes(getLedgerGroup(v.accountId) || '');
+            if (isPurchaseAccount) {
+                applyToLedger(v.accountId, baseAmt);
+            } else {
+                if (isCurrent) { totalPurchases += baseAmt; unassignedPurchases += baseAmt; }
+                else prevTotalPurchases += baseAmt;
+            }
+            unassignedDuties += totalGst;
             if (v.partyId) applyToLedger(v.partyId, -((v.totalAmount || 0) - (v.tdsAmount || 0)));
-        } else if (v.type === 'Receipt') {
-            if (v.accountId) applyToLedger(v.accountId, (v.totalAmount || 0));
-            else unassignedReceipts += v.totalAmount || 0;
-            if (isCurrent) totalReceipts += v.totalAmount || 0;
-            if (v.partyId) applyToLedger(v.partyId, -(v.totalAmount || 0));
-        } else if (v.type === 'Payment') {
-            if (v.accountId) applyToLedger(v.accountId, -(v.totalAmount || 0));
-            else unassignedPayments += v.totalAmount || 0;
-            if (isCurrent) totalPayments += v.totalAmount || 0;
-            if (v.partyId) applyToLedger(v.partyId, (v.totalAmount || 0));
-        } else if (v.type === 'Journal' || v.type === 'Contra') {
-            if (v.accountId) applyToLedger(v.accountId, -(v.totalAmount || 0)); // Credit
-            if (v.partyId) applyToLedger(v.partyId, (v.totalAmount || 0)); // Debit
-        } else if (v.type === 'Debit Note') {
-            if (v.accountId) applyToLedger(v.accountId, -baseAmt);
-            else if (isCurrent) totalPurchases -= baseAmt;
-            else prevTotalPurchases -= baseAmt;
-
-            unassignedDuties -= totalGst; // Cr Duties
-            if (v.partyId) applyToLedger(v.partyId, ((v.totalAmount || 0) - (v.tdsAmount || 0)));
         } else if (v.type === 'Credit Note') {
-            if (v.accountId) applyToLedger(v.accountId, baseAmt);
-            else if (isCurrent) totalSales -= baseAmt;
-            else prevTotalSales -= baseAmt;
-
-            unassignedDuties += totalGst; // Dr Duties
+            const isSalesAccount = v.accountId && ['Sales Accounts', 'Direct Incomes', 'Indirect Incomes'].includes(getLedgerGroup(v.accountId) || '');
+            if (isSalesAccount) {
+                applyToLedger(v.accountId, baseAmt);
+            } else {
+                if (isCurrent) { totalSales -= baseAmt; unassignedSales -= baseAmt; }
+                else prevTotalSales -= baseAmt;
+            }
+            unassignedDuties += totalGst;
             if (v.partyId) applyToLedger(v.partyId, -((v.totalAmount || 0) - (v.tdsAmount || 0)));
+        } else if (v.type === 'Debit Note') {
+            const isPurchaseAccount = v.accountId && ['Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'].includes(getLedgerGroup(v.accountId) || '');
+            if (isPurchaseAccount) {
+                applyToLedger(v.accountId, -baseAmt);
+            } else {
+                if (isCurrent) { totalPurchases -= baseAmt; unassignedPurchases -= baseAmt; }
+                else prevTotalPurchases -= baseAmt;
+            }
+            unassignedDuties -= totalGst;
+            if (v.partyId) applyToLedger(v.partyId, ((v.totalAmount || 0) - (v.tdsAmount || 0)));
+        } else if (v.type === 'Receipt') {
+            const isCashBank = v.accountId && ['Bank Accounts', 'Cash-in-Hand'].includes(getLedgerGroup(v.accountId) || '');
+            if (isCashBank) {
+                applyToLedger(v.accountId, baseAmt);
+            } else {
+                if (isCurrent) { totalReceipts += baseAmt; unassignedReceipts += baseAmt; }
+            }
+            if (v.partyId) applyToLedger(v.partyId, -baseAmt);
+        } else if (v.type === 'Payment') {
+            const isCashBank = v.accountId && ['Bank Accounts', 'Cash-in-Hand'].includes(getLedgerGroup(v.accountId) || '');
+            if (isCashBank) {
+                applyToLedger(v.accountId, -baseAmt);
+            } else {
+                if (isCurrent) { totalPayments += baseAmt; unassignedPayments += baseAmt; }
+            }
+            if (v.partyId) applyToLedger(v.partyId, baseAmt);
+        } else if (v.type === 'Contra') {
+            if (v.accountId) applyToLedger(v.accountId, baseAmt);
+            if (v.partyId) applyToLedger(v.partyId, -baseAmt);
+        } else if (v.type === 'Journal') {
+            if (v.accountId) applyToLedger(v.accountId, baseAmt);
+            if (v.partyId) applyToLedger(v.partyId, -baseAmt);
         }
       });
 
@@ -265,7 +289,7 @@ export default function Reports() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
            <h1 className="text-2xl font-semibold text-blue-900">Reports</h1>
-           <p className="text-sm text-red-500">DEBUG | Vouchers: {reportData?.allVouchers?.length} | Ledgers: {reportData?.allLedgers?.length} | Sales: {reportData?.totalSales} | SL: {reportData?.allLedgers?.filter(l=>l.group==='Sales Accounts').map(l=>l.name + '=' + reportData.currentChanges[l.id]).join(', ')}</p>
+           
         </div>
         <div className="flex items-center gap-2">
            <label className="text-sm text-gray-600">From:</label>
