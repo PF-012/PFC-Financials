@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +30,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async () => {
+    if (!isSupabaseConfigured) {
+      alert('Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment to sign in.');
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

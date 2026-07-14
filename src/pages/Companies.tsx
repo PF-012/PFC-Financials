@@ -54,9 +54,7 @@ export default function Companies() {
       setIsCreating(false);
       setEditingId(null);
       setForm(initialForm);
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   const handleEdit = (c: Company) => {
@@ -71,9 +69,7 @@ export default function Companies() {
       if (activeCompany?.id === id) {
         setActiveCompany(companies.find(c => c.id !== id) || null);
       }
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   if (isCreating) {

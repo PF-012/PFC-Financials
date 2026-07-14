@@ -34,9 +34,7 @@ export default function DayBook() {
       });
       await batch.commit();
       setSelectedIds([]);
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   const handleDeleteAll = async () => {
@@ -51,9 +49,7 @@ export default function DayBook() {
       const batch = writeBatch(db);
       snap.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   useEffect(() => {

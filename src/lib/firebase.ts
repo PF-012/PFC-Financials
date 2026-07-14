@@ -9,9 +9,9 @@ export function collection(db: any, path: string) {
 
 export function doc(db: any, path?: string, id?: string) {
   if (typeof db === 'object' && db.type === 'collection') {
-    return { type: 'doc', path: db.path, id: path || Math.random().toString(36).substring(2, 15) };
+    return { type: 'doc', path: db.path, id: path || crypto.randomUUID() };
   }
-  return { type: 'doc', path: path, id: id || Math.random().toString(36).substring(2, 15) };
+  return { type: 'doc', path: path, id: id || crypto.randomUUID() };
 }
 
 export function where(field: string, op: string, value: any) {

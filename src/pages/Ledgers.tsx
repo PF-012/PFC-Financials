@@ -23,9 +23,7 @@ export default function Ledgers() {
       });
       await batch.commit();
       setSelectedIds([]);
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   const handleDeleteAll = async () => {
@@ -42,9 +40,7 @@ export default function Ledgers() {
          if (!d.data().isSystem) batch.delete(d.ref);
       });
       await batch.commit();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   useEffect(() => {
@@ -106,9 +102,7 @@ export default function Ledgers() {
         setEditingId(null);
         setForm(initialForm);
       }
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
 
@@ -168,9 +162,7 @@ export default function Ledgers() {
       setIsCreating(false);
       setEditingId(null);
       setForm(initialForm);
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error: any) { console.error(error); alert(error.message || 'An error occurred while saving.'); }
   };
 
   const handleEdit = (l: Ledger) => {
@@ -316,7 +308,7 @@ export default function Ledgers() {
                     <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
             {editingId && (
               <button type="button" onClick={() => setDeleteConfirm(editingId)} className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-red-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                 Delete (Alt+D)
+                 Delete
               </button>
             )}
             <button type="submit" className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900">

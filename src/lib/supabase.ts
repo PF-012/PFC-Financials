@@ -6,3 +6,5 @@ const supabaseUrl = (typeof process !== 'undefined' && process.env ? process.env
 const supabaseKey = (typeof process !== 'undefined' && process.env ? process.env.VITE_SUPABASE_ANON_KEY : undefined) || import.meta.env?.VITE_SUPABASE_ANON_KEY || 'public-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const isSupabaseConfigured = supabaseUrl !== "https://xyzcompany.supabase.co" && supabaseUrl !== "";
