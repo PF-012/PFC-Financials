@@ -199,6 +199,8 @@ export default function Reports() {
       totalPurchases += unassignedPurchases;
       prevTotalPurchases += prevUnassignedPurchases;
       
+      currentAssets += (unassignedReceipts - unassignedPayments);
+      
       if (unassignedDuties < 0) {
          currentLiabilities -= unassignedDuties;
       } else {
@@ -463,8 +465,6 @@ export default function Reports() {
                  if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
                     bal = (reportData.currentChanges || {})[l.id] || 0;
                  }
-                 
-                 
                  if (Math.abs(bal) < 0.01) return null;
                  return (
                    <tr key={l.id} className="hover:bg-gray-50">
@@ -475,27 +475,61 @@ export default function Reports() {
                    </tr>
                  );
                })}
+               {reportData.unassignedCash !== 0 && (
+                   <tr key="pseudo-cash" className="hover:bg-gray-50">
+                     <td className="px-6 py-4 text-sm text-gray-900">Uncategorized Cash/Bank</td>
+                     <td className="px-6 py-4 text-sm text-gray-500">Current Assets</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.unassignedCash > 0 ? reportData.unassignedCash.toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.unassignedCash < 0 ? Math.abs(reportData.unassignedCash).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                   </tr>
+               )}
+               {reportData.unassignedDuties !== 0 && (
+                   <tr key="pseudo-duties" className="hover:bg-gray-50">
+                     <td className="px-6 py-4 text-sm text-gray-900">Uncategorized Duties & Taxes</td>
+                     <td className="px-6 py-4 text-sm text-gray-500">Duties & Taxes</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.unassignedDuties > 0 ? reportData.unassignedDuties.toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.unassignedDuties < 0 ? Math.abs(reportData.unassignedDuties).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                   </tr>
+               )}
+               {reportData.unassignedSales !== 0 && (
+                   <tr key="pseudo-sales" className="hover:bg-gray-50">
+                     <td className="px-6 py-4 text-sm text-gray-900">Uncategorized Sales</td>
+                     <td className="px-6 py-4 text-sm text-gray-500">Sales Accounts</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{(-reportData.unassignedSales) > 0 ? (-reportData.unassignedSales).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{(-reportData.unassignedSales) < 0 ? Math.abs(-reportData.unassignedSales).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                   </tr>
+               )}
+               {reportData.unassignedPurchases !== 0 && (
+                   <tr key="pseudo-purchases" className="hover:bg-gray-50">
+                     <td className="px-6 py-4 text-sm text-gray-900">Uncategorized Purchases</td>
+                     <td className="px-6 py-4 text-sm text-gray-500">Purchase Accounts</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.unassignedPurchases > 0 ? reportData.unassignedPurchases.toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                     <td className="px-6 py-4 text-sm text-right font-medium">{reportData.unassignedPurchases < 0 ? Math.abs(reportData.unassignedPurchases).toLocaleString('en-IN', {minimumFractionDigits: 2}) : ''}</td>
+                   </tr>
+               )}
              </tbody>
              <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                <tr>
                  <td colSpan={2} className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Total:</td>
                  <td className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">
-                   {reportData.allLedgers.reduce((sum: number, l: any) => {
+                   {[...reportData.allLedgers.map((l: any) => {
                        let bal = (reportData.ledgerBalances || {})[l.id] || 0;
                        if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
                           bal = (reportData.currentChanges || {})[l.id] || 0;
                        }
-                       
+                       return bal;
+                   }), reportData.unassignedCash, reportData.unassignedDuties, -reportData.unassignedSales, reportData.unassignedPurchases].reduce((sum: number, bal: number) => {
                        return sum + (bal > 0 ? bal : 0);
                    }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>
                  <td className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">
-                   {reportData.allLedgers.reduce((sum: number, l: any) => {
+                   {[...reportData.allLedgers.map((l: any) => {
                        let bal = (reportData.ledgerBalances || {})[l.id] || 0;
                        if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
                           bal = (reportData.currentChanges || {})[l.id] || 0;
                        }
-                       
+                       return bal;
+                   }), reportData.unassignedCash, reportData.unassignedDuties, -reportData.unassignedSales, reportData.unassignedPurchases].reduce((sum: number, bal: number) => {
                        return sum + (bal < 0 ? Math.abs(bal) : 0);
                    }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>
