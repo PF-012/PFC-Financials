@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 
+const eventTarget = new EventTarget();
+
 export const db = {};
 export const auth = {}; // Auth is handled directly via supabase in AuthContext
 
@@ -78,30 +80,34 @@ export async function getDoc(docObj: any) {
 export async function addDoc(coll: any, data: any) {
   const { data: res, error } = await supabase.from(coll.path).insert(data).select().single();
   if (error) throw error;
-  return { id: res.id, type: 'doc', path: coll.path };
+  eventTarget.dispatchEvent(new Event('mutation'));
+  return { id: res.id, type: 'doc', path: coll.path   };
 }
 
 export async function setDoc(docObj: any, data: any, options?: { merge?: boolean }) {
   const payload = { id: docObj.id, ...data };
   const { error } = await supabase.from(docObj.path).upsert(payload);
   if (error) throw error;
+eventTarget.dispatchEvent(new Event('mutation'));
 }
 
 export async function updateDoc(docObj: any, data: any) {
   const { error } = await supabase.from(docObj.path).update(data).eq('id', docObj.id);
   if (error) throw error;
+eventTarget.dispatchEvent(new Event('mutation'));
 }
 
 export async function deleteDoc(docObj: any) {
   const { error } = await supabase.from(docObj.path).delete().eq('id', docObj.id);
   if (error) throw error;
+eventTarget.dispatchEvent(new Event('mutation'));
 }
 
 export function onSnapshot(queryObj: any, callback: (snapshot: any) => void) {
-  // Initial fetch
-  getDocs(queryObj).then(callback).catch(console.error);
-
-  // Subscribe to realtime
+  const fetch = () => getDocs(queryObj).then(callback).catch(console.error);
+  fetch();
+  const listener = () => fetch();
+  eventTarget.addEventListener('mutation', listener);
   const channelId = `public:${queryObj.path}-${Math.random().toString(36).substring(7)}`;
   const channel = supabase.channel(channelId)
     .on('postgres_changes', { event: '*', schema: 'public', table: queryObj.path }, payload => {
@@ -112,6 +118,7 @@ export function onSnapshot(queryObj: any, callback: (snapshot: any) => void) {
     .subscribe();
 
   return () => {
+    eventTarget.removeEventListener('mutation', listener);
     supabase.removeChannel(channel);
   };
 }
@@ -138,6 +145,7 @@ export function writeBatch(db: any) {
         else if (op.type === 'update') await updateDoc(op.doc, op.data);
         else if (op.type === 'delete') await deleteDoc(op.doc);
       }
+    eventTarget.dispatchEvent(new Event('mutation'));
     }
   };
 }

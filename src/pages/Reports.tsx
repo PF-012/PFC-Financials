@@ -333,9 +333,7 @@ export default function Reports() {
                     
                     <div className="pt-4 flex justify-between text-sm font-semibold">
                        <span className="text-gray-900">Gross Profit c/o</span>
-                       <span className={reportData.grossProfit >= 0 ? "text-gray-900 font-medium" : "text-gray-400 font-medium"}>
-                          {reportData.grossProfit > 0 ? "₹ " + reportData.grossProfit.toLocaleString('en-IN', {minimumFractionDigits: 2}) : "-"}
-                       </span>
+                       <span className="text-gray-900 font-medium">{reportData.grossProfit < 0 ? "-₹ " + Math.abs(reportData.grossProfit).toLocaleString('en-IN', {minimumFractionDigits: 2}) : "₹ " + reportData.grossProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                     </div>
 
                     {/* PnL Account Dr */}
@@ -347,9 +345,7 @@ export default function Reports() {
                        
                        <div className="pt-4 flex justify-between text-sm font-semibold">
                           <span className="text-blue-900">Net Profit</span>
-                          <span className={reportData.netProfit >= 0 ? "text-blue-900" : "text-gray-400"}>
-                             {reportData.netProfit > 0 ? "₹ " + reportData.netProfit.toLocaleString('en-IN', {minimumFractionDigits: 2}) : "-"}
-                          </span>
+                          <span className="text-blue-900">{reportData.netProfit < 0 ? "-₹ " + Math.abs(reportData.netProfit).toLocaleString('en-IN', {minimumFractionDigits: 2}) : "₹ " + reportData.netProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                        </div>
                     </div>
                  </div>
@@ -373,18 +369,13 @@ export default function Reports() {
                        <span className="text-gray-900 font-medium">₹ {reportData.closingStock.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                     </div>
                     
-                    <div className="pt-4 flex justify-between text-sm font-semibold">
-                       <span className="text-gray-400">Gross Loss c/o</span>
-                       <span className={reportData.grossProfit < 0 ? "text-gray-900 font-medium" : "text-gray-400 font-medium"}>
-                          {reportData.grossProfit < 0 ? "₹ " + Math.abs(reportData.grossProfit).toLocaleString('en-IN', {minimumFractionDigits: 2}) : "-"}
-                       </span>
-                    </div>
+                    
 
                     {/* PnL Account Cr */}
                     <div className="mt-8 pt-6 border-t border-gray-200">
                        <div className="flex justify-between text-sm mb-4 font-semibold text-gray-900">
                           <span>Gross Profit b/f</span>
-                          <span>{reportData.grossProfit > 0 ? "₹ " + reportData.grossProfit.toLocaleString('en-IN', {minimumFractionDigits: 2}) : "₹ 0.00"}</span>
+                          <span>{reportData.grossProfit < 0 ? "-₹ " + Math.abs(reportData.grossProfit).toLocaleString('en-IN', {minimumFractionDigits: 2}) : "₹ " + reportData.grossProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                        </div>
                        
                        <div className="flex justify-between text-sm mb-4 cursor-pointer active:bg-gray-200 md:hover:bg-gray-100 -mx-2 px-2 py-1 rounded transition-colors" onClick={() => handleBreakdown('Indirect Incomes', 'ledgers', l => l.group === 'Indirect Incomes')}>
