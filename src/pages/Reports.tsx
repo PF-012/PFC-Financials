@@ -240,7 +240,7 @@ export default function Reports() {
     } catch (error) {
       console.error("Error calculating report data:", error);
     }
-  }, [vouchers, ledgers, loading, fromDate, toDate]);
+  }, [globalVouchers, globalLedgers, loading, fromDate, toDate, activeCompany]);
 
   if (!activeCompany) return null;
 

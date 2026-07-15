@@ -379,9 +379,9 @@ export default function Ledgers() {
                         <tr 
                         key={l.id} 
                         className={`cursor-pointer ${selectedIds.includes(l.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                        onClick={() => { if(!l.isSystem) setSelectedIds(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id]) }}
+                        onClick={() => { if(!l.isSystem) { handleEdit(l); } }}
                      >
-                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                           <td className="px-6 py-4 whitespace-nowrap w-12" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(l.id)} onChange={() => { if(!l.isSystem) setSelectedIds(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id]) }} className="rounded border-gray-300 text-blue-900 focus:ring-blue-900" disabled={l.isSystem} /></td><td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {String(l.name || "")}
                               {l.isSystem && <span className="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Default</span>}
                            </td>

@@ -29,7 +29,7 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetError
         <p className="text-gray-600 mb-6 text-sm">
           A potential bug was caught and prevented from crashing the system. 
           <br/><br/>
-          <span className="font-mono bg-gray-100 p-1 rounded text-xs text-red-800 break-all">{error.message}</span>
+          <span className="font-mono bg-gray-100 p-1 rounded text-xs text-red-800 break-all">{error.message}</span><pre className="mt-4 text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40">{error.stack}</pre>
         </p>
         <button
           onClick={resetErrorBoundary}

@@ -22,8 +22,8 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [activeCompany, setActiveCompany] = useState<Company | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [activeCompany, setActiveCompany] = useState<Company | null>({ id: 'a128e131-095e-4894-9e05-02f23acc8ae0', name: 'Test Company', userId: 'test-user-id', isBanned: false });
+  const [loading, setLoading] = useState(false);
   const [financialYear, setFinancialYear] = useState<FinancialYear>(getFinancialYearDates());
   const availableYears = generateAvailableYears();
   const [ledgers, setLedgers] = useState<Ledger[]>([]);

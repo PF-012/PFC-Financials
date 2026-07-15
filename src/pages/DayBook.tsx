@@ -289,7 +289,7 @@ export default function DayBook() {
                         if (credit) totalCredit += credit;
                         
                         return (
-                           <tr id={`row-${index}`} key={v.id} className={`active:bg-blue-100 md:hover:bg-blue-50/50 transition-colors duration-150 group cursor-pointer ${selectedIndex === index ? 'bg-blue-100' : ''}`} onClick={() => setSelectedIndex(index)} onDoubleClick={() => handleEdit(v)}>
+                           <tr id={`row-${index}`} key={v.id} className={`active:bg-blue-100 md:hover:bg-blue-50/50 transition-colors duration-150 group cursor-pointer ${selectedIndex === index ? 'bg-blue-100' : ''}`} onClick={() => handleEdit(v)}>
                               <td className="px-6 py-4 border-r border-gray-100 whitespace-nowrap w-12" onClick={e => e.stopPropagation()}>
                                  <input 
                                     type="checkbox" 
