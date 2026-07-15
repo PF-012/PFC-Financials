@@ -97,7 +97,7 @@ export default function Vouchers() {
         setForm({
            ...initialForm,
            type: parsed.type || 'Purchase',
-           date: parsed.date || initialForm.date,
+           date: normalizeDate(parsed.date) || initialForm.date,
            number: parsed.number || '',
            partyId: foundPartyId,
            accountId: foundAccountId,
