@@ -7,29 +7,25 @@ import { db } from '../lib/firebase';
 import { Voucher } from '../types';
 
 export default function Dashboard() {
-  const { activeCompany, financialYear } = useAppContext();
+  const { activeCompany, financialYear, ledgers: globalLedgers, vouchers: globalVouchers } = useAppContext();
+  const ledgers = globalLedgers.filter(l => l.companyId === activeCompany?.id);
+  const vouchers = globalVouchers.filter(v => v.companyId === activeCompany?.id);
   const { user } = useAuth();
   
   const [stats, setStats] = React.useState({ sales: 0, purchases: 0, totalVouchers: 0 });
 
   React.useEffect(() => {
     if (!activeCompany || !user || !financialYear) return;
-    const q = query(collection(db, 'vouchers'), where('userId', '==', user.id));
-    const unsub = onSnapshot(q, (snap) => {
-      let sales = 0;
-      let purchases = 0;
-      const compVouchers = snap.docs.filter(doc => {
-        const v = doc.data() as Voucher;
-        return v.companyId === activeCompany.id && v.date >= financialYear.start && v.date <= financialYear.end;
-      });
-      compVouchers.forEach(doc => {
-        const v = doc.data() as Voucher;
-        if (v.type === 'Sales') sales += v.totalAmount;
-        if (v.type === 'Purchase') purchases += v.totalAmount;
-      });
-      setStats({ sales, purchases, totalVouchers: compVouchers.length });
-    });
-    return () => unsub();
+    
+        let sales = 0;
+        let purchases = 0;
+        const compVouchers = vouchers.filter(v => v.date >= financialYear.start && v.date <= financialYear.end);
+        compVouchers.forEach(v => {
+           if (v.type === 'Sales') sales += v.totalAmount;
+           if (v.type === 'Purchase') purchases += v.totalAmount;
+        });
+        setStats({ sales, purchases, totalVouchers: compVouchers.length });
+        
   }, [activeCompany, user, financialYear]);
 
   if (!activeCompany) {

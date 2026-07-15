@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Company } from '../types';
+import { Company, Ledger, Voucher } from '../types';
 import { collection, query, where, onSnapshot } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
@@ -13,6 +13,8 @@ interface AppContextType {
   financialYear: FinancialYear;
   setFinancialYear: (fy: FinancialYear) => void;
   availableYears: FinancialYear[];
+  ledgers: Ledger[];
+  vouchers: Voucher[];
 }
 
 const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -24,6 +26,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [financialYear, setFinancialYear] = useState<FinancialYear>(getFinancialYearDates());
   const availableYears = generateAvailableYears();
+  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -32,6 +36,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
       return;
     }
+    
     const q = query(collection(db, 'companies'), where('userId', '==', user.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const comps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
@@ -50,11 +55,22 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const lq = query(collection(db, 'ledgers'), where('userId', '==', user.id));
+    const unsubL = onSnapshot(lq, (snap) => {
+       setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)));
+    });
+
+    const vq = query(collection(db, 'vouchers'), where('userId', '==', user.id));
+    const unsubV = onSnapshot(vq, (snap) => {
+       setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)));
+    });
+
+    return () => { unsubscribe(); unsubL(); unsubV(); };
   }, [user]);
 
   return (
-    <AppContext.Provider value={{ companies, activeCompany, setActiveCompany, loading, financialYear, setFinancialYear, availableYears }}>
+    <AppContext.Provider value={{ companies, activeCompany, setActiveCompany, loading, financialYear, setFinancialYear, availableYears, ledgers, vouchers }}>
       {children}
     </AppContext.Provider>
   );

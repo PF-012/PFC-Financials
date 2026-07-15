@@ -58,12 +58,14 @@ export default function DayBook() {
     }
   }, [selectedIndex]);
 
-  const { activeCompany, financialYear } = useAppContext();
+  const { activeCompany, financialYear, ledgers: globalLedgers, vouchers: globalVouchers } = useAppContext();
+  const ledgers = globalLedgers.filter(l => l.companyId === activeCompany?.id);
+  const vouchers = globalVouchers.filter(v => v.companyId === activeCompany?.id);
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  
+  
   const [fromDate, setFromDate] = useState(getTodayDate());
   const [toDate, setToDate] = useState(getTodayDate());
   const [typeFilter, setTypeFilter] = useState('');
@@ -73,32 +75,9 @@ export default function DayBook() {
     setToDate(financialYear.end);
   }, [financialYear]);
 
-  useEffect(() => {
-    if (!activeCompany || !user) return;
+  
 
-    const ledgersQuery = query(
-      collection(db, 'ledgers'),
-      where('userId', '==', user.id)
-    );
-    const unsubscribeLedgers = onSnapshot(ledgersQuery, (snapshot) => {
-      setLedgers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id));
-    });
-
-    return () => unsubscribeLedgers();
-  }, [activeCompany, user]);
-
-  useEffect(() => {
-    if (!activeCompany || !user) return;
-    const q = query(
-      collection(db, 'vouchers'),
-      where('userId', '==', user.id)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      let v = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher));
-      setVouchers(v.filter(voucher => voucher.companyId === activeCompany.id));
-    });
-    return () => unsubscribe();
-  }, [activeCompany, user]);
+  
 
   const filteredVouchers = React.useMemo(() => {
     let v = vouchers.filter(voucher => voucher.date >= fromDate && voucher.date <= toDate && (typeFilter ? voucher.type === typeFilter : true));

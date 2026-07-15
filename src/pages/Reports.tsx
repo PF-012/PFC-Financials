@@ -8,11 +8,13 @@ import { Voucher, Ledger } from '../types';
 import { X, ArrowLeft } from 'lucide-react';
 
 export default function Reports() {
-  const { activeCompany, financialYear } = useAppContext();
+  const { activeCompany, financialYear, ledgers: globalLedgers, vouchers: globalVouchers } = useAppContext();
+  const ledgers = globalLedgers.filter(l => l.companyId === activeCompany?.id);
+  const vouchers = globalVouchers.filter(v => v.companyId === activeCompany?.id);
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  
+  
   const [reportData, setReportData] = useState<any>(null);
   const [activeReport, setActiveReport] = useState<'pnl' | 'balanceSheet' | 'trialBalance' | 'cashFlow'>('pnl');
   const [breakdownStack, setBreakdownStack] = useState<{title: string, type: 'vouchers' | 'ledgers', data: any[]}[]>([]);
@@ -73,35 +75,7 @@ export default function Reports() {
     setToDate(financialYear.end);
   }, [financialYear]);
 
-  useEffect(() => {
-    if (!activeCompany || !user) return;
-    
-    setLoading(true);
-    
-    const vq = query(collection(db, 'vouchers'), where('userId', '==', user.id));
-    const lq = query(collection(db, 'ledgers'), where('userId', '==', user.id));
-    
-    let vLoaded = false;
-    let lLoaded = false;
-    
-    const checkDone = () => {
-      if (vLoaded && lLoaded) setLoading(false);
-    };
-
-    const unsubV = onSnapshot(vq, (snap) => {
-      setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)).filter(v => v.companyId === activeCompany.id));
-      vLoaded = true;
-      checkDone();
-    });
-    
-    const unsubL = onSnapshot(lq, (snap) => {
-      setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id && String(l.name || '').trim() && l.name !== 'Unknown'));
-      lLoaded = true;
-      checkDone();
-    });
-
-    return () => { unsubV(); unsubL(); };
-  }, [activeCompany, user]);
+  
 
   useEffect(() => {
     if (loading) return;

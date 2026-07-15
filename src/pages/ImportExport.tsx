@@ -258,13 +258,15 @@ const processFileContent = async (file: File, type: 'ledgers' | 'vouchers', useA
     
 let mappedData: any[] = [];
     
-    if (type === 'vouchers' && useAI) {
-      // Chunking array to avoid hitting payload/token limits
+    if (useAI) {
       const chunks = [];
-      for(let i=0; i<data.length; i+=15) chunks.push(data.slice(i, i+15));
+      const chunkSize = type === 'vouchers' ? 15 : 30;
+      for(let i=0; i<data.length; i+=chunkSize) chunks.push(data.slice(i, i+chunkSize));
+      
+      const endpoint = type === 'vouchers' ? '/api/map-imported-vouchers' : '/api/map-imported-ledgers';
       
       for(const chunk of chunks) {
-         const res = await fetch('/api/map-imported-vouchers', {
+         const res = await fetch(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ rawData: chunk })
@@ -275,7 +277,11 @@ let mappedData: any[] = [];
            throw new Error(errData.error || 'AI Mapping failed');
          }
          const resData = await res.json();
-         mappedData.push(...resData.mappedVouchers);
+         if (type === 'vouchers') {
+             mappedData.push(...resData.mappedVouchers);
+         } else {
+             mappedData.push(...resData.mappedLedgers);
+         }
       }
     } else {
       mappedData = data.map((item: any) => {
@@ -683,6 +689,18 @@ let mappedData: any[] = [];
              <h2 className="text-lg font-medium text-gray-900">Import Data</h2>
           </div>
           <div className="space-y-4">
+            <div className="mb-4 flex items-center bg-blue-50 p-3 rounded border border-blue-100">
+                <input 
+                  type="checkbox" 
+                  id="useAIAssist" 
+                  checked={useAIAssist}
+                  onChange={(e) => setUseAIAssist(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="useAIAssist" className="ml-2 block text-sm font-medium text-blue-900">
+                  Use Smart AI Mapping (High Accuracy for Custom Formats)
+                </label>
+            </div>
             
             
             <div className="border border-gray-200 rounded-md p-4 bg-gray-50 md:col-span-2">
@@ -742,18 +760,7 @@ let mappedData: any[] = [];
               <h3 className="text-sm font-medium text-gray-900 mb-2">Transactions (Vouchers)</h3>
               <p className="text-xs text-gray-500 mb-2">Supports .json, .xml, .csv, and Excel files.</p>
               
-              <div className="mb-4 flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="useAIAssist" 
-                  checked={useAIAssist}
-                  onChange={(e) => setUseAIAssist(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="useAIAssist" className="ml-2 block text-sm text-gray-700">
-                  Use Smart AI Import (High Accuracy, slower)
-                </label>
-              </div>
+              
 
               <input 
                 type="file" 

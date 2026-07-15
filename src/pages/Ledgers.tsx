@@ -49,10 +49,12 @@ export default function Ledgers() {
     }
   }, [selectedIndex]);
 
-  const { activeCompany } = useAppContext();
+  const { activeCompany, ledgers: globalLedgers, vouchers: globalVouchers } = useAppContext();
+  const ledgers = globalLedgers.filter(l => l.companyId === activeCompany?.id);
+  const vouchers = globalVouchers.filter(v => v.companyId === activeCompany?.id);
   const { user } = useAuth();
   
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,14 +80,7 @@ export default function Ledgers() {
   };
   const [form, setForm] = useState(initialForm);
 
-  useEffect(() => {
-    if (!activeCompany || !user) return;
-    const q = query(collection(db, 'ledgers'), where('userId', '==', user.id));
-    const unsub = onSnapshot(q, (snap) => {
-      setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id && String(l.name || '').trim() && l.name !== 'Unknown'));
-    });
-    return () => unsub();
-  }, [activeCompany, user]);
+  
 
 
   const handleDelete = async (id: string) => {

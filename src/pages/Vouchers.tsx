@@ -147,12 +147,14 @@ export default function Vouchers() {
     }
   }, [selectedIndex]);
 
-  const { activeCompany, financialYear } = useAppContext();
+  const { activeCompany, financialYear, ledgers: globalLedgers, vouchers: globalVouchers } = useAppContext();
+  const ledgers = globalLedgers.filter(l => l.companyId === activeCompany?.id);
+  const vouchers = globalVouchers.filter(v => v.companyId === activeCompany?.id);
   const { user } = useAuth();
   const location = useLocation();
   
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -308,16 +310,7 @@ export default function Vouchers() {
     }
   }, [location]);
   
-  useEffect(() => {
-    if (!activeCompany || !user) return;
-    const vq = query(collection(db, 'vouchers'), where('userId', '==', user.id));
-    const unsubV = onSnapshot(vq, snap => setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)).filter(v => v.companyId === activeCompany.id)));
-    
-    const lq = query(collection(db, 'ledgers'), where('userId', '==', user.id));
-    const unsubL = onSnapshot(lq, snap => setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id && String(l.name || '').trim() && l.name !== 'Unknown')));
-
-    return () => { unsubV(); unsubL(); };
-  }, [activeCompany, user]);
+  
 
 
   const handleDelete = async (id: string) => {

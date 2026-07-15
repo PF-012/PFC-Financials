@@ -1,53 +1,63 @@
 const fs = require('fs');
-let content = fs.readFileSync('server.ts', 'utf8');
+let code = fs.readFileSync('server.ts', 'utf8');
 
-const validateEndpoint = `
-  app.post('/api/validate-voucher', async (req, res) => {
+const newRoute = `
+  app.post('/api/map-imported-ledgers', async (req, res) => {
     try {
-      const { type, partyName, partyGroup, accountName, accountGroup, amount } = req.body;
-      
+      const { rawData } = req.body;
+      if (!rawData || !Array.isArray(rawData)) {
+        return res.status(400).json({ error: 'Missing or invalid rawData array' });
+      }
+
+      const itemsToProcess = rawData.slice(0, 50);
       const prompt = \`
-      You are an expert accountant. Review the following proposed accounting entry to ensure it follows basic accounting rules.
+      You are an expert accountant and data extraction AI.
+      I will give you an array of raw JSON objects representing accounting ledgers/accounts imported from a file (CSV, Excel, JSON, XML).
+      Your job is to perfectly map each object into a standardized Ledger schema.
       
-      Voucher Type: \${type}
-      Primary Ledger (Party/Item): \${partyName} (Group: \${partyGroup})
-      Secondary Ledger (Cash/Bank/Account): \${accountName} (Group: \${accountGroup})
-      Amount: \${amount}
-      
-      Determine if this entry makes logical accounting sense.
-      Examples of WRONG entries:
-      - A "Payment" where the Secondary Ledger is a Customer (Sundry Debtors) instead of Bank/Cash. (Payments are usually made FROM Bank/Cash).
-      - A "Receipt" where the Secondary Ledger is a Supplier instead of Bank/Cash.
-      - A "Sales" where the Primary Ledger is Cash and Secondary is Bank. (Sales should usually credit a Sales account and debit Customer/Cash/Bank).
-      - Paying a Customer (Sundry Debtors) using a "Purchase" voucher.
-      
-      If it is correct or generally acceptable, return exactly: {"isValid": true}
-      If it is blatantly wrong or highly suspicious, return exactly: {"isValid": false, "reason": "Short explanation of why it is wrong and how to fix it."}
-      
-      Return ONLY valid JSON.
+      IMPORTANT INSTRUCTIONS FOR MAPPING LEDGERS:
+      - 'name' is the name of the ledger/account.
+      - 'group' MUST be a valid accounting group. Standard groups: "Capital Account", "Current Assets", "Cash-in-Hand", "Bank Accounts", "Sundry Debtors", "Current Liabilities", "Sundry Creditors", "Duties & Taxes", "Fixed Assets", "Direct Expenses", "Indirect Expenses", "Direct Incomes", "Indirect Incomes", "Purchase Accounts", "Sales Accounts".
+      - 'openingBalance' should be a number (default 0).
+      - 'address', 'gstin', 'contactNo' are optional strings.
+
+      Raw Data (JSON):
+      \${JSON.stringify(itemsToProcess)}
+
+      Return a raw JSON array of objects (no markdown, just the array) with this exact structure for each item:
+      [{
+        "name": "String",
+        "group": "String",
+        "openingBalance": Number,
+        "address": "String or empty string",
+        "gstin": "String or empty string",
+        "contactNo": "String or empty string"
+      }]
       \`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        model: 'gemini-2.5-flash',
+        contents: [
+          { role: 'user', parts: [{ text: prompt }] }
+        ],
         config: {
           responseMimeType: 'application/json',
           temperature: 0.1
         }
       });
-
-      const rawText = response.text || "{}";
+      const rawText = response.text || "[]";
       const cleanedText = rawText.replace(/\\\`\\\`\\\`json/g, '').replace(/\\\`\\\`\\\`/g, '').trim();
-      const result = JSON.parse(cleanedText);
+      const mappedLedgers = JSON.parse(cleanedText);
       
-      res.json(result);
+      res.json({ mappedLedgers });
     } catch (err) {
-      console.error('AI Validation error:', err);
-      // Fallback to valid if AI fails so we don't block the user
-      res.json({ isValid: true });
+      console.error('AI Mapping error:', err);
+      res.status(500).json({ error: 'Failed to map ledgers via AI' });
     }
   });
+
 `;
 
-content = content.replace(/app\.listen\(PORT/, validateEndpoint + '\n  app.listen(PORT');
-fs.writeFileSync('server.ts', content);
+code = code.replace("app.post('/api/map-imported-vouchers'", newRoute + "  app.post('/api/map-imported-vouchers'");
+code = code.replace(/gemini-3\.1-flash-lite/g, 'gemini-2.5-flash'); // Upgrade model since gemini-3.1-flash-lite might not exist or we should use gemini-2.5-flash
+fs.writeFileSync('server.ts', code);
