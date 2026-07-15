@@ -282,10 +282,10 @@ export default function Vouchers() {
     if (isCreating) {
       const totalRate = (form.cgstRate || 0) + (form.sgstRate || 0) + (form.igstRate || 0);
       if (totalRate > 0 && form.totalAmount) {
-         const baseAmount = form.totalAmount / (1 + totalRate / 100);
-         const newCgstAmt = Number((baseAmount * (form.cgstRate || 0) / 100).toFixed(2));
-         const newSgstAmt = Number((baseAmount * (form.sgstRate || 0) / 100).toFixed(2));
-         const newIgstAmt = Number((baseAmount * (form.igstRate || 0) / 100).toFixed(2));
+         const baseAmount = Math.round(form.totalAmount / (1 + totalRate / 100) * 100) / 100;
+         const newCgstAmt = Math.round(baseAmount * (form.cgstRate || 0)) / 100;
+         const newSgstAmt = Math.round(baseAmount * (form.sgstRate || 0)) / 100;
+         const newIgstAmt = Math.round(baseAmount * (form.igstRate || 0)) / 100;
          
          if (form.cgstAmount !== newCgstAmt || form.sgstAmount !== newSgstAmt || form.igstAmount !== newIgstAmt) {
              setForm((prev: any) => ({
@@ -843,7 +843,7 @@ export default function Vouchers() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{party}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                 ₹ {(v.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                 ₹ {(v.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                  <div className="flex justify-end gap-3">

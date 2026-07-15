@@ -285,8 +285,8 @@ export default function DayBook() {
                      filteredVouchers.map((v, index) => {
                         const party = ledgers.find(l => l.id === v.partyId)?.name || 'Unknown';
                         const { debit, credit } = getDebitCreditAmount(v);
-                        if (debit) totalDebit += debit;
-                        if (credit) totalCredit += credit;
+                        if (debit) totalDebit = Math.round((totalDebit + debit) * 100) / 100;
+                        if (credit) totalCredit = Math.round((totalCredit + credit) * 100) / 100;
                         
                         return (
                            <tr id={`row-${index}`} key={v.id} className={`active:bg-blue-100 md:hover:bg-blue-50/50 transition-colors duration-150 group cursor-pointer ${selectedIndex === index ? 'bg-blue-100' : ''}`} onClick={() => handleEdit(v)}>
@@ -303,10 +303,10 @@ export default function DayBook() {
                               <td className="px-6 py-4 border-r border-gray-100 whitespace-nowrap text-sm text-gray-800 font-medium">{String(v.type || "")}</td>
                               <td className="px-6 py-4 border-r border-gray-100 whitespace-nowrap text-sm text-blue-900 font-semibold">{String(v.number || "-")}</td>
                               <td className="px-6 py-4 border-r border-gray-100 whitespace-nowrap text-sm text-gray-900 text-right">
-                                 {debit ? debit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                                 {debit ? debit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                               </td>
                               <td className="px-6 py-4 border-r border-gray-100 whitespace-nowrap text-sm text-gray-900 text-right">
-                                 {credit ? credit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                                 {credit ? credit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                                  <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -329,10 +329,10 @@ export default function DayBook() {
                       Grand Total
                     </td>
                     <td className="px-6 py-4 border-r border-gray-200 text-right text-sm font-bold text-gray-900">
-                       {totalDebit > 0 ? totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                       {totalDebit > 0 ? totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                     </td>
                     <td className="px-6 py-4 border-r border-gray-200 text-right text-sm font-bold text-gray-900">
-                       {totalCredit > 0 ? totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                       {totalCredit > 0 ? totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                     </td>
                     <td className="px-6 py-4"></td>
                  </tr>
