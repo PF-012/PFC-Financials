@@ -831,7 +831,7 @@ export default function Vouchers() {
    id={`row-${index}`} 
    key={v.id} 
    className={`cursor-pointer ${selectedIds.includes(v.id) ? 'bg-blue-50' : selectedIndex === index ? 'bg-blue-100' : 'hover:bg-gray-50'} ${typeChanged ? 'border-t-4 border-gray-300' : ''}`} 
-   onClick={() => { handleEdit(v); }} 
+   onClick={() => { setSelectedIndex(index); }} 
    onDoubleClick={() => handleEdit(v)}
 >
                               
