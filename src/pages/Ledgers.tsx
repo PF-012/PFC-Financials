@@ -153,7 +153,7 @@ export default function Ledgers() {
     if (!activeCompany || !user) return;
     try {
       const docRef = editingId ? doc(db, 'ledgers', editingId) : doc(collection(db, 'ledgers'));
-      await setDoc(docRef, { ...form, companyId: activeCompany.id, userId: user.id, createdAt: new Date().toISOString() }, { merge: true });
+      await setDoc(docRef, { ...form, companyId: activeCompany.id, userId: user.id }, { merge: true });
       setIsCreating(false);
       setEditingId(null);
       setForm(initialForm);

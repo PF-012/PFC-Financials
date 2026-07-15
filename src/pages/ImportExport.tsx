@@ -424,30 +424,32 @@ let mappedData: any[] = [];
            ...item,
            companyId: activeCompany.id,
            userId: user.id,
-           importedAt: new Date().toISOString()
+           
          });
          addedCount++;
          return; // We handled it here
       } else if (type === 'vouchers') {
          // Resolve partyId and accountId from string names to ledger IDs
-         if (item.partyId && typeof item.partyId === 'string') {
-             let ledger = existingLedgers.find(l => String(l.name || '').toLowerCase() === item.partyId.toLowerCase());
+         if ((item.partyId || item.partyName) && typeof (item.partyId || item.partyName) === 'string') {
+             const pName = item.partyId || item.partyName;
+             let ledger = existingLedgers.find(l => l.id === pName || String(l.name || '').toLowerCase() === pName.toLowerCase());
              if (!ledger) {
                  // Auto-create missing ledger
                  const newLedgerRef = doc(collection(db, 'ledgers'));
-                 const newLedger = { name: item.partyId, group: 'Sundry Debtors', companyId: activeCompany.id, userId: user.id };
+                 const newLedger = { name: pName, group: 'Sundry Debtors', companyId: activeCompany.id, userId: user.id };
                  batch.set(newLedgerRef, newLedger);
                  ledger = { id: newLedgerRef.id, ...newLedger };
                  existingLedgers.push(ledger);
              }
              item.partyId = ledger.id;
          }
-         if (item.accountId && typeof item.accountId === 'string') {
-             let ledger = existingLedgers.find(l => String(l.name || '').toLowerCase() === item.accountId.toLowerCase());
+         if ((item.accountId || item.accountName) && typeof (item.accountId || item.accountName) === 'string') {
+             const aName = item.accountId || item.accountName;
+             let ledger = existingLedgers.find(l => l.id === aName || String(l.name || '').toLowerCase() === aName.toLowerCase());
              if (!ledger) {
                  // Auto-create missing ledger
                  const newLedgerRef = doc(collection(db, 'ledgers'));
-                 const newLedger = { name: item.accountId, group: 'Sales Accounts', companyId: activeCompany.id, userId: user.id };
+                 const newLedger = { name: aName, group: 'Sales Accounts', companyId: activeCompany.id, userId: user.id };
                  batch.set(newLedgerRef, newLedger);
                  ledger = { id: newLedgerRef.id, ...newLedger };
                  existingLedgers.push(ledger);
@@ -456,12 +458,13 @@ let mappedData: any[] = [];
          }
       }
       
+      delete item.partyName; delete item.accountName; delete item.createdAt; delete item.updatedAt; delete item.importedAt; delete item.id;
       const docRef = doc(collection(db, type));
       batch.set(docRef, {
         ...item,
         companyId: activeCompany.id,
         userId: user.id,
-        importedAt: new Date().toISOString()
+        
       });
       addedCount++;
     });
@@ -595,7 +598,6 @@ let mappedData: any[] = [];
                narration: 'Auto-imported from ' + file.name,
                companyId: activeCompany.id,
                userId: user.id,
-               createdAt: new Date().toISOString()
             }).commit();
             
             newVouchersCount++;

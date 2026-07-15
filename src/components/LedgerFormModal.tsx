@@ -64,8 +64,8 @@ export default function LedgerFormModal({ isOpen, onClose, ledgerId, onSave }: L
     
     try {
       const docRef = ledgerId ? doc(db, 'ledgers', ledgerId) : doc(collection(db, 'ledgers'));
-      const newLedger = { ...form, companyId: activeCompany.id, userId: user.id, updatedAt: new Date().toISOString() };
-      if (!ledgerId) newLedger.createdAt = new Date().toISOString();
+      const newLedger = { ...form, companyId: activeCompany.id, userId: user.id };
+      if (!ledgerId) delete newLedger.createdAt;
       
       await setDoc(docRef, newLedger, { merge: true });
       if (onSave) onSave({ ...newLedger, id: docRef.id } as Ledger);

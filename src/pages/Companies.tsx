@@ -33,16 +33,16 @@ export default function Companies() {
     try {
       if (editingId) {
         const docRef = doc(db, 'companies', editingId);
-        await setDoc(docRef, { ...form, userId: user.id, updatedAt: new Date().toISOString() }, { merge: true });
+        await setDoc(docRef, { ...form, userId: user.id }, { merge: true });
       } else {
-        const newCompany = { ...form, userId: user.id, createdAt: new Date().toISOString() };
+        const newCompany = { ...form, userId: user.id };
         const docRef = await addDoc(collection(db, 'companies'), newCompany);
         setActiveCompany({ id: docRef.id, ...newCompany } as Company);
 
         const defaultLedgers = [
-          { name: 'Cash A/C', group: 'Cash-in-Hand', openingBalance: 0, isSystem: true, companyId: docRef.id, userId: user.id, createdAt: new Date().toISOString() },
-          { name: 'Bank A/C', group: 'Bank Accounts', openingBalance: 0, isSystem: true, companyId: docRef.id, userId: user.id, createdAt: new Date().toISOString() },
-          { name: 'Sales A/C', group: 'Sales Accounts', openingBalance: 0, isSystem: true, companyId: docRef.id, userId: user.id, createdAt: new Date().toISOString() }
+          { name: 'Cash A/C', group: 'Cash-in-Hand', openingBalance: 0, isSystem: true, companyId: docRef.id, userId: user.id },
+          { name: 'Bank A/C', group: 'Bank Accounts', openingBalance: 0, isSystem: true, companyId: docRef.id, userId: user.id },
+          { name: 'Sales A/C', group: 'Sales Accounts', openingBalance: 0, isSystem: true, companyId: docRef.id, userId: user.id }
         ];
         const batch = writeBatch(db);
         defaultLedgers.forEach(l => {

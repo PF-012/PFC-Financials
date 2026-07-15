@@ -53,7 +53,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
         txnId,
         plan: selectedPlan,
         status: 'pending',
-        createdAt: new Date().toISOString()
+
       });
       
       setSuccess('Payment details submitted successfully! We are verifying the payment. You will receive your 5-digit license key on WhatsApp shortly after verification.');

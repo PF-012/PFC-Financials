@@ -45,7 +45,6 @@ export default function BankReconciliation() {
       amount: Number(form.amt),
       type: form.type,
       isReconciled: false,
-      createdAt: serverTimestamp()
     });
     setForm({ date: format(new Date(), 'yyyy-MM-dd'), desc: '', amt: 0, type: 'Dr' });
     setIsAddingMode(false);

@@ -13,7 +13,6 @@ interface PaymentRequest {
   txnId: string;
   plan: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
   licenseKey?: string;
 }
 
@@ -66,7 +65,6 @@ export default function Admin() {
       const key = Math.floor(10000 + Math.random() * 90000).toString();
       
       await setDoc(doc(db, 'validKeys', key), {
-        createdAt: new Date().toISOString(),
         used: false,
         generatedForCompany: request.companyName,
         plan: request.plan

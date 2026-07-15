@@ -97,7 +97,7 @@ export default function Vouchers() {
         setForm({
            ...initialForm,
            type: parsed.type || 'Purchase',
-           date: normalizeDate(parsed.date) || initialForm.date,
+           date: parsed.date || initialForm.date,
            number: parsed.number || '',
            partyId: foundPartyId,
            accountId: foundAccountId,
@@ -471,7 +471,7 @@ export default function Vouchers() {
       }
 
       const docRef = editingId ? doc(db, 'vouchers', editingId) : doc(collection(db, 'vouchers'));
-      await setDoc(docRef, { ...submitForm, companyId: activeCompany.id, userId: user.id, createdAt: new Date().toISOString() }, { merge: true });
+      await setDoc(docRef, { ...submitForm, companyId: activeCompany.id, userId: user.id }, { merge: true });
       
       if (!editingId && submitForm.type === 'Sales' && (submitForm.narration || '').includes('Tally')) {
          // Auto-create receipt voucher
@@ -496,7 +496,7 @@ export default function Vouchers() {
          else delete receiptForm.accountId;
          
          const receiptDocRef = doc(collection(db, 'vouchers'));
-         await setDoc(receiptDocRef, { ...receiptForm, companyId: activeCompany.id, userId: user.id, createdAt: new Date().toISOString() }, { merge: true });
+         await setDoc(receiptDocRef, { ...receiptForm, companyId: activeCompany.id, userId: user.id }, { merge: true });
       }
       setIsCreating(false);
       setEditingId(null);
