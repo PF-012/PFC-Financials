@@ -29,9 +29,9 @@ export default function Reports() {
     } else if (type === 'ledgers') {
         // Find normal ledgers
         data = reportData.allLedgers.filter(filterFn).map((l: any) => {
-           let bal = reportData.ledgerBalances[l.id] || 0;
+           let bal = (reportData.ledgerBalances || {})[l.id] || 0;
            if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
-              bal = reportData.currentChanges[l.id] || 0;
+              bal = (reportData.currentChanges || {})[l.id] || 0;
            }
            return { ...l, balance: bal };
         }).filter((l: any) => l.balance !== 0);
@@ -234,7 +234,8 @@ export default function Reports() {
         unassignedPurchases,
         allVouchers: currentVouchers,
         allLedgers: ledgers,
-        ledgerBalances
+        ledgerBalances,
+        currentChanges
       });
     } catch (error) {
       console.error("Error calculating report data:", error);
@@ -450,12 +451,12 @@ export default function Reports() {
              </thead>
              <tbody className="divide-y divide-gray-200 bg-white">
                {reportData.allLedgers.map((l: any) => {
-                 let bal = reportData.ledgerBalances[l.id] || 0;
+                 let bal = (reportData.ledgerBalances || {})[l.id] || 0;
                  if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
-                    bal = reportData.currentChanges[l.id] || 0;
+                    bal = (reportData.currentChanges || {})[l.id] || 0;
                  }
-                 if (l.group === 'Capital Account') bal = -(reportData.ledgerBalances[l.id] || 0);
-                 if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -(reportData.ledgerBalances[l.id] || 0);
+                 if (l.group === 'Capital Account') bal = -((reportData.ledgerBalances || {})[l.id] || 0);
+                 if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -((reportData.ledgerBalances || {})[l.id] || 0);
                  
                  // P&L items: Incomes are credit (negative bal here means credit), Expenses are debit (positive)
                  if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
@@ -476,24 +477,24 @@ export default function Reports() {
                  <td colSpan={2} className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Total:</td>
                  <td className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">
                    {reportData.allLedgers.reduce((sum: number, l: any) => {
-                       let bal = reportData.ledgerBalances[l.id] || 0;
+                       let bal = (reportData.ledgerBalances || {})[l.id] || 0;
                        if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
-                          bal = reportData.currentChanges[l.id] || 0;
+                          bal = (reportData.currentChanges || {})[l.id] || 0;
                        }
-                       if (l.group === 'Capital Account') bal = -(reportData.ledgerBalances[l.id] || 0);
-                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -(reportData.ledgerBalances[l.id] || 0);
+                       if (l.group === 'Capital Account') bal = -((reportData.ledgerBalances || {})[l.id] || 0);
+                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -((reportData.ledgerBalances || {})[l.id] || 0);
                        if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
                        return sum + (bal > 0 ? bal : 0);
                    }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>
                  <td className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">
                    {reportData.allLedgers.reduce((sum: number, l: any) => {
-                       let bal = reportData.ledgerBalances[l.id] || 0;
+                       let bal = (reportData.ledgerBalances || {})[l.id] || 0;
                        if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
-                          bal = reportData.currentChanges[l.id] || 0;
+                          bal = (reportData.currentChanges || {})[l.id] || 0;
                        }
-                       if (l.group === 'Capital Account') bal = -(reportData.ledgerBalances[l.id] || 0);
-                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -(reportData.ledgerBalances[l.id] || 0);
+                       if (l.group === 'Capital Account') bal = -((reportData.ledgerBalances || {})[l.id] || 0);
+                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -((reportData.ledgerBalances || {})[l.id] || 0);
                        if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
                        return sum + (bal < 0 ? Math.abs(bal) : 0);
                    }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
