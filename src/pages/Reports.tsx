@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from '../lib/firebase';
+import { collection, query, where, getDocs, onSnapshot } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,8 @@ export default function Reports() {
   const { activeCompany, financialYear } = useAppContext();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [reportData, setReportData] = useState<any>(null);
   const [activeReport, setActiveReport] = useState<'pnl' | 'balanceSheet' | 'trialBalance' | 'cashFlow'>('pnl');
   const [breakdownStack, setBreakdownStack] = useState<{title: string, type: 'vouchers' | 'ledgers', data: any[]}[]>([]);
@@ -72,28 +74,44 @@ export default function Reports() {
   }, [financialYear]);
 
   useEffect(() => {
-    if (activeCompany && user) {
-      loadData();
-    }
-  }, [activeCompany, user, fromDate, toDate]);
-
-  const loadData = async () => {
+    if (!activeCompany || !user) return;
+    
     setLoading(true);
+    
+    const vq = query(collection(db, 'vouchers'), where('userId', '==', user.id));
+    const lq = query(collection(db, 'ledgers'), where('userId', '==', user.id));
+    
+    let vLoaded = false;
+    let lLoaded = false;
+    
+    const checkDone = () => {
+      if (vLoaded && lLoaded) setLoading(false);
+    };
+
+    const unsubV = onSnapshot(vq, (snap) => {
+      setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)).filter(v => v.companyId === activeCompany.id));
+      vLoaded = true;
+      checkDone();
+    });
+    
+    const unsubL = onSnapshot(lq, (snap) => {
+      setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => l.companyId === activeCompany.id && String(l.name || '').trim() && l.name !== 'Unknown'));
+      lLoaded = true;
+      checkDone();
+    });
+
+    return () => { unsubV(); unsubL(); };
+  }, [activeCompany, user]);
+
+  useEffect(() => {
+    if (loading) return;
+    
     try {
-      const vq = query(collection(db, 'vouchers'), where('companyId', '==', activeCompany?.id), where('userId', '==', user?.id));
-      const vSnap = await getDocs(vq);
-      const allVouchers = vSnap.docs.filter(doc => doc.data().companyId === activeCompany?.id).map(doc => ({ id: doc.id, ...doc.data() } as Voucher));
-
-      const lq = query(collection(db, 'ledgers'), where('companyId', '==', activeCompany?.id), where('userId', '==', user?.id));
-      const lSnap = await getDocs(lq);
-      const ledgers = lSnap.docs.filter(doc => doc.data().companyId === activeCompany?.id).map(doc => ({ id: doc.id, ...doc.data() } as Ledger)).filter(l => {
-    const name = String(l.name || '').trim();
-    return name && name !== 'Unknown';
-  });
-
+      const allVouchers = vouchers;
+      
       const ledgerBalances: Record<string, number> = {};
       ledgers.forEach(l => {
-         ledgerBalances[l.id] = l.openingBalance || 0; // + is Dr, - is Cr
+         ledgerBalances[l.id] = l.openingBalance || 0;
       });
 
       let totalSales = 0, totalPurchases = 0, totalReceipts = 0, totalPayments = 0;
@@ -104,7 +122,6 @@ export default function Reports() {
       const prevChanges: Record<string, number> = {};
 
       const relevantVouchers = allVouchers.filter(v => v.date <= toDate);
-      console.log('Reports fetched vouchers:', allVouchers.length, 'relevant:', relevantVouchers.length);
       const currentVouchers = relevantVouchers.filter(v => v.date >= fromDate);
 
       relevantVouchers.forEach(v => {
@@ -120,47 +137,26 @@ export default function Reports() {
 
         const getLedgerGroup = (id: string) => ledgers.find(l => l.id === id)?.group;
 
-
         if (v.type === 'Sales') {
-            const isSalesAccount = v.accountId && ['Sales Accounts', 'Direct Incomes', 'Indirect Incomes'].includes(getLedgerGroup(v.accountId) || '');
-            if (isSalesAccount) {
-                applyToLedger(v.accountId, -baseAmt);
-            } else {
-                if (isCurrent) { totalSales += baseAmt; unassignedSales += baseAmt; }
-                else prevTotalSales += baseAmt;
+            if (isCurrent) totalSales += baseAmt; else prevTotalSales += baseAmt;
+            if (v.accountId) applyToLedger(v.accountId, -baseAmt);
+            else if (isCurrent) unassignedSales += baseAmt;
+            if (v.partyId) applyToLedger(v.partyId, v.totalAmount || 0);
+            if (v.cgstAmount || v.sgstAmount || v.igstAmount || v.gstAmount) {
+                const dutiesLedger = ledgers.find(l => l.group === 'Duties & Taxes');
+                if (dutiesLedger) applyToLedger(dutiesLedger.id, -totalGst);
+                else if (isCurrent) unassignedDuties -= totalGst;
             }
-            unassignedDuties -= totalGst;
-            if (v.partyId) applyToLedger(v.partyId, ((v.totalAmount || 0) - (v.tdsAmount || 0)));
         } else if (v.type === 'Purchase') {
-            const isPurchaseAccount = v.accountId && ['Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'].includes(getLedgerGroup(v.accountId) || '');
-            if (isPurchaseAccount) {
-                applyToLedger(v.accountId, baseAmt);
-            } else {
-                if (isCurrent) { totalPurchases += baseAmt; unassignedPurchases += baseAmt; }
-                else prevTotalPurchases += baseAmt;
+            if (isCurrent) totalPurchases += baseAmt; else prevTotalPurchases += baseAmt;
+            if (v.accountId) applyToLedger(v.accountId, baseAmt);
+            else if (isCurrent) unassignedPurchases += baseAmt;
+            if (v.partyId) applyToLedger(v.partyId, -(v.totalAmount || 0));
+            if (v.cgstAmount || v.sgstAmount || v.igstAmount || v.gstAmount) {
+                const dutiesLedger = ledgers.find(l => l.group === 'Duties & Taxes');
+                if (dutiesLedger) applyToLedger(dutiesLedger.id, totalGst);
+                else if (isCurrent) unassignedDuties += totalGst;
             }
-            unassignedDuties += totalGst;
-            if (v.partyId) applyToLedger(v.partyId, -((v.totalAmount || 0) - (v.tdsAmount || 0)));
-        } else if (v.type === 'Credit Note') {
-            const isSalesAccount = v.accountId && ['Sales Accounts', 'Direct Incomes', 'Indirect Incomes'].includes(getLedgerGroup(v.accountId) || '');
-            if (isSalesAccount) {
-                applyToLedger(v.accountId, baseAmt);
-            } else {
-                if (isCurrent) { totalSales -= baseAmt; unassignedSales -= baseAmt; }
-                else prevTotalSales -= baseAmt;
-            }
-            unassignedDuties += totalGst;
-            if (v.partyId) applyToLedger(v.partyId, -((v.totalAmount || 0) - (v.tdsAmount || 0)));
-        } else if (v.type === 'Debit Note') {
-            const isPurchaseAccount = v.accountId && ['Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'].includes(getLedgerGroup(v.accountId) || '');
-            if (isPurchaseAccount) {
-                applyToLedger(v.accountId, -baseAmt);
-            } else {
-                if (isCurrent) { totalPurchases -= baseAmt; unassignedPurchases -= baseAmt; }
-                else prevTotalPurchases -= baseAmt;
-            }
-            unassignedDuties -= totalGst;
-            if (v.partyId) applyToLedger(v.partyId, ((v.totalAmount || 0) - (v.tdsAmount || 0)));
         } else if (v.type === 'Receipt') {
             const isCashBank = v.accountId && ['Bank Accounts', 'Cash-in-Hand'].includes(getLedgerGroup(v.accountId) || '');
             if (isCurrent) totalReceipts += baseAmt;
@@ -189,25 +185,27 @@ export default function Reports() {
       });
 
       let capital = 0;
-      let currentAssets = (unassignedReceipts - unassignedPayments);
       let currentLiabilities = 0;
       let fixedAssets = 0;
+      let currentAssets = 0;
       
-      let indirectExpenses = 0, indirectIncomes = 0, directExpenses = 0, directIncomes = 0;
-      let prevIndirectExpenses = 0, prevIndirectIncomes = 0, prevDirectExpenses = 0, prevDirectIncomes = 0;
-      
-      ledgers.forEach(l => {
-         const bal = ledgerBalances[l.id] || 0;
-         const curChange = currentChanges[l.id] || 0;
-         const prevChange = (prevChanges[l.id] || 0) + (l.openingBalance || 0);
+      let directExpenses = 0, directIncomes = 0, indirectExpenses = 0, indirectIncomes = 0;
+      let prevDirectExpenses = 0, prevDirectIncomes = 0, prevIndirectExpenses = 0, prevIndirectIncomes = 0;
 
-         if (l.group === 'Capital Account') capital -= bal; 
-         else if (['Current Assets', 'Sundry Debtors', 'Cash-in-Hand', 'Bank Accounts'].includes(l.group)) currentAssets += bal;
-         else if (['Current Liabilities', 'Sundry Creditors'].includes(l.group)) currentLiabilities -= bal;
-         else if (l.group === 'Fixed Assets') fixedAssets += bal;
-         else if (l.group === 'Duties & Taxes') currentLiabilities -= bal;
-         
-         // Current Year P&L
+      ledgers.forEach(l => {
+         const curChange = currentChanges[l.id] || 0;
+         const prevChange = prevChanges[l.id] || 0;
+         const finalBal = ledgerBalances[l.id];
+
+         if (l.group === 'Capital Account') capital -= finalBal;
+         else if (l.group === 'Current Liabilities' || l.group === 'Sundry Creditors' || l.group === 'Duties & Taxes') {
+            currentLiabilities -= finalBal;
+         }
+         else if (l.group === 'Fixed Assets') fixedAssets += finalBal;
+         else if (l.group === 'Current Assets' || l.group === 'Cash-in-Hand' || l.group === 'Bank Accounts' || l.group === 'Sundry Debtors') {
+            currentAssets += finalBal;
+         }
+
          if (l.group === 'Indirect Expenses') indirectExpenses += curChange;
          else if (l.group === 'Indirect Incomes') indirectIncomes -= curChange;
          else if (l.group === 'Direct Expenses') directExpenses += curChange;
@@ -215,7 +213,6 @@ export default function Reports() {
          else if (l.group === 'Purchase Accounts') totalPurchases += curChange;
          else if (l.group === 'Sales Accounts') totalSales -= curChange;
 
-         // Previous Years P&L
          if (l.group === 'Indirect Expenses') prevIndirectExpenses += prevChange;
          else if (l.group === 'Indirect Incomes') prevIndirectIncomes -= prevChange;
          else if (l.group === 'Direct Expenses') prevDirectExpenses += prevChange;
@@ -232,14 +229,13 @@ export default function Reports() {
       
       const openingStock = 0;
       const closingStock = 0;
-      
-      const grossProfit = (totalSales + directIncomes) - (totalPurchases + directExpenses);
-      const netProfit = (grossProfit + indirectIncomes) - indirectExpenses;
 
-      const prevGrossProfit = (prevTotalSales + prevDirectIncomes) - (prevTotalPurchases + prevDirectExpenses);
-      const prevNetProfit = (prevGrossProfit + prevIndirectIncomes) - prevIndirectExpenses;
+      const grossProfit = totalSales + directIncomes + closingStock - (openingStock + totalPurchases + directExpenses);
+      const netProfit = grossProfit + indirectIncomes - indirectExpenses;
+
+      const prevGrossProfit = prevTotalSales + prevDirectIncomes + closingStock - (openingStock + prevTotalPurchases + prevDirectExpenses);
+      const prevNetProfit = prevGrossProfit + prevIndirectIncomes - prevIndirectExpenses;
       
-      // Update reportData state interface to include prevNetProfit
       setReportData({
         totalSales,
         totalPurchases,
@@ -262,18 +258,14 @@ export default function Reports() {
         unassignedDuties,
         unassignedSales,
         unassignedPurchases,
-        allVouchers: currentVouchers, // Only show current vouchers in breakdown
+        allVouchers: currentVouchers,
         allLedgers: ledgers,
-        ledgerBalances,
-        currentChanges
+        ledgerBalances
       });
-
     } catch (error) {
-      console.error(error); alert(error.message || "Error loading reports");
-    } finally {
-      setLoading(false);
+      console.error("Error calculating report data:", error);
     }
-  };
+  }, [vouchers, ledgers, loading, fromDate, toDate]);
 
   if (!activeCompany) return null;
 
