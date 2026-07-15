@@ -12,7 +12,7 @@ export default function Reports() {
   const ledgers = globalLedgers.filter(l => l.companyId === activeCompany?.id);
   const vouchers = globalVouchers.filter(v => v.companyId === activeCompany?.id);
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   
   
   const [reportData, setReportData] = useState<any>(null);
@@ -78,7 +78,7 @@ export default function Reports() {
   
 
   useEffect(() => {
-    if (loading) return;
+    
     
     try {
       const allVouchers = vouchers;
