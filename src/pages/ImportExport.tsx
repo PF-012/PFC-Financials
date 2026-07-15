@@ -408,70 +408,6 @@ const processFileContent = async (file: File, type: 'ledgers' | 'vouchers', useA
 
   
   
-  const handleFixData = async () => {
-    if (!window.confirm('This will fix the broken ledger names in your database. Proceed?')) return;
-    setLoading(true);
-    setMessage('Fixing data...');
-    try {
-      const vSnap = await getDocs(query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id)));
-      const lSnap = await getDocs(query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id)));
-      
-      const ledgers = lSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const vouchers = vSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      // Mapping recovered from user's provided logs
-      const recoveredMap: Record<string, string> = {
-        "6a95d71f-0788-467b-a18e-68d5481d91fd": "Cash A/C",
-        "cf864fae-bdb3-4b59-9fea-00c99d0235a8": "Bank A/C",
-        "a128e131-095e-4894-9e05-02f23acc8ae0": "Sales A/C",
-        "9d8f7e92-ca8a-49e4-9190-f18d47647ddf": "Pintu Kumar Chowdhury",
-        "92c56626-7634-4567-9f92-d9f3f3a6cfce": "Arijit Das",
-        "1af0d83b-2467-4f24-a1d1-e8ce9c62bdc8": "Vicky Singh",
-        "f080d6d4-1959-4cd9-965b-49ea09aa850d": "Indrajit Saha",
-        "03d084c7-6cfd-4754-a179-3bbf0f3466d4": "Abhik Chakaborty",
-        "49fab888-34ca-484e-936b-821290b6663b": "Sujal Lohar",
-        "65fd54ab-6473-4e48-a0c3-3e7e860a9c5c": "Debojit Chakraborty",
-        "e32a5c9d-f13e-427e-8dd4-68ef1666fb71": "Arghya Basu",
-        "f46ab80e-1052-49c4-8ee9-f1be2158b9ab": "Rajdip Karmakar",
-        "e84e57a4-7624-4a7c-8056-7902b5881199": "Prabhakar Mondal",
-        "87e93acb-7be5-4519-b635-539ae9f0c4d0": "Oman Razi",
-        "3bdd9654-2e60-46cc-99bb-4fdcb2ba5aa4": "Finastic Trading",
-        "a0a31d8c-93a3-4169-979f-48a2ac2c6f52": "P Choudhury and Associates",
-        "6d064039-035f-4113-93b5-bb67f2165ee2": "Jio Recharge",
-        "e79957e9-6a61-42ff-ae9e-6ceed0a8dd1c": "Government Grant",
-        "c28f16e9-00f8-4b60-a532-270591748787": "Drawings",
-        "d16c2b44-3976-435e-91c0-fb353fc49305": "Sandip Kr. Jhabak",
-        "15458443-cf77-4a01-89a0-c16cb989f03a": "Praveen Jha",
-        "4136c8ad-ed46-454c-8053-846a1a7ab885": "Airtel Recharge"
-      };
-
-      const batch = writeBatch(db);
-      let count = 0;
-      
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      
-      // We will just rename the ledgers that have a UUID as their name.
-      const dummyLedgers = ledgers.filter(l => uuidRegex.test(l.name));
-      let renamedCount = 0;
-      for (const dL of dummyLedgers) {
-          const correctName = recoveredMap[dL.name];
-          if (correctName) {
-              batch.update(doc(db, 'ledgers', dL.id), { name: correctName });
-              renamedCount++;
-          }
-      }
-      
-      // For vouchers, if they happen to have stored the UUID in partyName or accountName, clean it up.
-      // Actually, we just fixed the ledgers themselves, so DayBook which looks up ledger by ID will now get the correct name!
-
-      await batch.commit();
-      setMessage(`Successfully restored ${renamedCount} ledger names.`);
-    } catch(err: any) {
-      setMessage('Error fixing data: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
   const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>, type: 'ledgers' | 'vouchers') => {
@@ -672,9 +608,9 @@ const processFileContent = async (file: File, type: 'ledgers' | 'vouchers', useA
     <div className="max-w-4xl mx-auto space-y-6">
       
       <div className="flex flex-col gap-1">
-         <h1 className="text-2xl font-semibold text-gray-900">Data Management</h1>
-         <p className="text-sm text-gray-500">Import and export your financial records in JSON or XML format.</p>
-      </div>
+           <h1 className="text-2xl font-semibold text-gray-900">Data Management</h1>
+           <p className="text-sm text-gray-500">Import and export your financial records in JSON or XML format.</p>
+        </div>
 
       {message && (
         <div className={`p-4 rounded-md ${message.includes('Error') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'} border`}>
@@ -682,13 +618,8 @@ const processFileContent = async (file: File, type: 'ledgers' | 'vouchers', useA
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        
-        <div className="mb-6 flex justify-end">
-    <button onClick={handleFixData} disabled={loading} className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 text-sm font-medium">
-      Fix Missing Ledger Names
-    </button>
-  </div>
+      
+  <div className="grid md:grid-cols-2 gap-6">
         {/* Import Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-4">
