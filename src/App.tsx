@@ -4,17 +4,17 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Companies from './pages/Companies';
-import Ledgers from './pages/Ledgers';
-import Vouchers from './pages/Vouchers';
-import Reports from './pages/Reports';
-import ImportExport from './pages/ImportExport';
-import DayBook from './pages/DayBook';
-import Settings from './pages/Settings';
-import GoldenRules from './pages/GoldenRules';
-import Admin from './pages/Admin';
+const Login = React.lazy(() => import('./pages/Login'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Companies = React.lazy(() => import('./pages/Companies'));
+const Ledgers = React.lazy(() => import('./pages/Ledgers'));
+const Vouchers = React.lazy(() => import('./pages/Vouchers'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const ImportExport = React.lazy(() => import('./pages/ImportExport'));
+const DayBook = React.lazy(() => import('./pages/DayBook'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
+const Admin = React.lazy(() => import('./pages/Admin'));
 import SplashScreen from './components/SplashScreen';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
@@ -57,6 +57,7 @@ function App() {
       <AuthProvider>
       <AppProvider>
         <BrowserRouter>
+          <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div></div>}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Layout />}>
@@ -73,6 +74,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
+          </React.Suspense>
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>

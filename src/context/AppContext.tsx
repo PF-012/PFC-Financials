@@ -32,26 +32,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
       return;
     }
-
     const q = query(collection(db, 'companies'), where('userId', '==', user.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const comps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
       setCompanies(comps);
       
-      // If we have companies but no active one, set the first one
-      if (comps.length > 0 && !activeCompany) {
-        setActiveCompany(comps[0]);
-      } else if (comps.length === 0) {
-        setActiveCompany(null);
-      } else if (activeCompany && !comps.find(c => c.id === activeCompany.id)) {
-        setActiveCompany(comps[0] || null);
-      }
+      setActiveCompany(prevActive => {
+        if (comps.length > 0 && !prevActive) {
+          return comps[0];
+        } else if (comps.length === 0) {
+          return null;
+        } else if (prevActive && !comps.find(c => c.id === prevActive.id)) {
+          return comps[0] || null;
+        }
+        return prevActive;
+      });
       
       setLoading(false);
     });
-
     return () => unsubscribe();
-  }, [user, activeCompany]);
+  }, [user]);
 
   return (
     <AppContext.Provider value={{ companies, activeCompany, setActiveCompany, loading, financialYear, setFinancialYear, availableYears }}>
