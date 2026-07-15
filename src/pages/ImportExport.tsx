@@ -129,9 +129,21 @@ export default function ImportExport() {
         where('userId', '==', user.id)
       );
       const snapshot = await getDocs(q);
+      
+      // Fetch ledgers to enrich vouchers with names for better import matching
+      let ledgersMap = {};
+      if (type === 'vouchers') {
+          const lSnap = await getDocs(query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id)));
+          lSnap.docs.forEach(d => { ledgersMap[d.id] = d.data().name; });
+      }
+
       const data = snapshot.docs.map(doc => {
         const item = doc.data();
         const { companyId, userId, ...rest } = item;
+        if (type === 'vouchers') {
+           if (rest.partyId && ledgersMap[rest.partyId]) rest.partyName = ledgersMap[rest.partyId];
+           if (rest.accountId && ledgersMap[rest.accountId]) rest.accountName = ledgersMap[rest.accountId];
+        }
         return rest;
       });
 
@@ -223,12 +235,10 @@ const processFileContent = async (file: File, type: 'ledgers' | 'vouchers', useA
             });
           }
         }
-
         if (!items) {
           throw new Error(`Invalid XML format in ${file.name}. Could not find items to import.`);
         }
         data = Array.isArray(items) ? items : [items];
-
       } else {
         const parsed = JSON.parse(text);
         let rawData = [];
@@ -255,8 +265,8 @@ const processFileContent = async (file: File, type: 'ledgers' | 'vouchers', useA
         data = rawData;
       }
     }
-    
-let mappedData: any[] = [];
+
+    let mappedData: any[] = [];
     
     if (useAI) {
       const chunks = [];
@@ -292,10 +302,8 @@ let mappedData: any[] = [];
           const group = getStr(getField(ledgerNode, ['PARENT', 'group', 'Group', 'Under Group', 'Account Group']));
           if (name || group) {
              if (!name || name.trim() === '') return null;
-
              let refinedGroup = group || 'Capital Account';
              const lowerName = name.toLowerCase();
-             const lowerGroup = refinedGroup.toLowerCase();
              let isTax = lowerName.includes('gst') || lowerName.includes('tax') || lowerName.includes('duty') || lowerName.includes('cess') || lowerName.includes('tds');
              if (lowerName.includes('purchase') || lowerName.includes('sale')) {
                  if (lowerName.includes('purchase')) refinedGroup = 'Purchase Accounts';
@@ -303,7 +311,6 @@ let mappedData: any[] = [];
              } else if (isTax) {
                  refinedGroup = 'Duties & Taxes';
              }
-
              return {
                 name: name,
                 group: refinedGroup,
@@ -315,156 +322,82 @@ let mappedData: any[] = [];
           }
        } else if (type === 'vouchers') {
           const voucherNode = item.VOUCHER || item;
-          const vType = getStr(getField(voucherNode, ['VOUCHERTYPENAME', 'type', 'Type', 'Voucher Type']));
-          const vDate = getStr(getField(voucherNode, ['DATE', 'date', 'Date', 'Voucher Date']));
-          if (vType || vDate) {
-             let parsedDate = vDate;
-             if (parsedDate && parsedDate.length === 8 && !parsedDate.includes('-')) {
-                 parsedDate = `${parsedDate.substring(0,4)}-${parsedDate.substring(4,6)}-${parsedDate.substring(6,8)}`;
-             } else if (parsedDate) {
-                 const d = new Date(parsedDate);
-                 if (!isNaN(d.getTime())) {
-                     parsedDate = d.toISOString().split('T')[0];
-                 } else {
-                     parsedDate = new Date().toISOString().split('T')[0];
-                 }
-             } else {
-                 parsedDate = new Date().toISOString().split('T')[0];
-             }
-             
-             let totalAmt = getNum(getField(voucherNode, ['AMOUNT', 'totalAmount', 'amount', 'Amount', 'Total Amount']));
-             let cgstAmt = getNum(getField(voucherNode, ['cgstAmount', 'CGST', 'CGST Amount']));
-             let sgstAmt = getNum(getField(voucherNode, ['sgstAmount', 'SGST', 'SGST Amount']));
-             let igstAmt = getNum(getField(voucherNode, ['igstAmount', 'IGST', 'IGST Amount']));
-             let tdsAmt = getNum(getField(voucherNode, ['tdsAmount', 'TDS', 'TDS Amount']));
-             
-             let partyId = getStr(getField(voucherNode, ['PARTYLEDGERNAME', 'partyName', 'partyId', 'Party Name', 'Party', 'Paid To', 'Received From', 'Supplier Ac', 'Customer Ac']), 'Unknown');
-             let accountId = getStr(getField(voucherNode, ['accountId', 'Account', 'Account Name', 'Paid From', 'Received In', 'Deposit To', 'Sales Account', 'Purchase Account', 'Debit Ac']));
-             
-             if (voucherNode['ALLLEDGERENTRIES.LIST']) {
-                 const entries = Array.isArray(voucherNode['ALLLEDGERENTRIES.LIST']) ? voucherNode['ALLLEDGERENTRIES.LIST'] : [voucherNode['ALLLEDGERENTRIES.LIST']];
-                 
-                 if (partyId === 'Unknown') {
-                     const drEntries = entries.filter((e: any) => getStr(e.ISDEEMEDPOSITIVE) === 'Yes');
-                     const crEntries = entries.filter((e: any) => getStr(e.ISDEEMEDPOSITIVE) === 'No');
-                     
-                     if (vType === 'Receipt' || vType === 'Sales') {
-                        if (crEntries.length > 0) partyId = getStr(crEntries[0].LEDGERNAME || 'Unknown');
-                        if (drEntries.length > 0 && !accountId) accountId = getStr(drEntries[0].LEDGERNAME || '');
-                     } else if (vType === 'Payment' || vType === 'Purchase') {
-                        if (drEntries.length > 0) partyId = getStr(drEntries[0].LEDGERNAME || 'Unknown');
-                        if (crEntries.length > 0 && !accountId) accountId = getStr(crEntries[0].LEDGERNAME || '');
-                     } else {
-                        if (drEntries.length > 0) partyId = getStr(drEntries[0].LEDGERNAME || 'Unknown');
-                        if (crEntries.length > 0 && !accountId) accountId = getStr(crEntries[0].LEDGERNAME || '');
-                     }
-                 }
-
-                 entries.forEach((entry: any) => {
-                     const lName = getStr(entry.LEDGERNAME || '');
-                     const lNameLower = String(lName || '').toLowerCase();
-                     const amt = Math.abs(getNum(entry.AMOUNT));
-                     
-                     if (lName === partyId) {
-                         if (!totalAmt) totalAmt = amt;
-                     } else if (lNameLower.includes('cgst')) {
-                         cgstAmt += amt;
-                     } else if (lNameLower.includes('sgst')) {
-                         sgstAmt += amt;
-                     } else if (lNameLower.includes('igst')) {
-                         igstAmt += amt;
-                     } else if (lNameLower.includes('tds')) {
-                         tdsAmt += amt;
-                     } else if (lNameLower.includes('sale') || lNameLower.includes('purchase')) {
-                         if (!accountId && lName !== partyId) accountId = lName;
-                     }
-                 });
-             }
-             
-             return {
-                type: vType || 'Journal',
-                date: parsedDate,
-                number: getStr(voucherNode.VOUCHERNUMBER || voucherNode.number || voucherNode['Voucher No.'] || voucherNode.Number || voucherNode.Ref),
-                partyId: partyId,
-                accountId: accountId,
-                totalAmount: totalAmt,
-                cgstAmount: cgstAmt,
-                sgstAmount: sgstAmt,
-                igstAmount: igstAmt,
-                tdsAmount: tdsAmt,
-                itemName: getStr(voucherNode.itemName || voucherNode.Item || voucherNode['Item Name']),
-                narration: getStr(voucherNode.NARRATION || voucherNode.narration || voucherNode.Narration)
-             };
-          }
+          const vType = getStr(voucherNode.VOUCHERTYPENAME || voucherNode.type || voucherNode.Type);
+          const date = getStr(voucherNode.DATE || voucherNode.date || voucherNode.Date);
+          const number = getStr(voucherNode.VOUCHERNUMBER || voucherNode.number || voucherNode.Number);
+          const partyName = getStr(voucherNode.PARTYLEDGERNAME || voucherNode.partyName || voucherNode.PartyLedgerName || voucherNode['Party Ledger Name']);
+          const accountName = getStr(voucherNode.ledgerName || voucherNode.accountName);
+          const amount = getNum(voucherNode.AMOUNT || voucherNode.amount || voucherNode.Amount);
+          return {
+             type: vType,
+             date,
+             number,
+             partyName,
+             accountName,
+             amount,
+             partyId: item.partyId || partyName,
+             accountId: item.accountId || accountName
+          };
        }
-       
-       return item;
-      }).filter((item: any) => item && Object.keys(item).length > 0);
+       return null;
+      }).filter(Boolean);
     }
 
-    
+    const ledgersSnap = await getDocs(query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id)));
+    const existingLedgers = ledgersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
     const batch = writeBatch(db);
-    
-    // Fetch all existing ledgers for deduplication and voucher resolution
-    const snap = await getDocs(query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id)));
-    const existingLedgers = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-    
     let addedCount = 0;
-    mappedData.forEach((item: any) => {
+
+    mappedData.forEach(item => {
       if (type === 'ledgers') {
-         const exists = existingLedgers.find(l => String(l.name || '').toLowerCase() === String(item.name || '').toLowerCase());
-         if (exists) return; // Skip duplicate ledger
-         
-         const newId = doc(collection(db, 'ledgers')).id;
+         // Prevent duplicates
+         const isDuplicate = existingLedgers.find(l => String(l.name || '').toLowerCase() === String(item.name || '').toLowerCase());
+         if (isDuplicate) return;
+
+         const newId = item.id || doc(collection(db, 'ledgers')).id;
          item.id = newId;
-         existingLedgers.push(item); // Add to local list to prevent duplicates within the file itself
-         
-         const docRef = doc(db, 'ledgers', newId);
-         batch.set(docRef, {
-           ...item,
-           companyId: activeCompany.id,
-           userId: user.id,
-           
-         });
-         addedCount++;
-         return; // We handled it here
+         existingLedgers.push(item);
       } else if (type === 'vouchers') {
-         // Resolve partyId and accountId from string names to ledger IDs
-         if ((item.partyId || item.partyName) && typeof (item.partyId || item.partyName) === 'string') {
-             const pName = item.partyId || item.partyName;
-             let ledger = existingLedgers.find(l => l.id === pName || String(l.name || '').toLowerCase() === pName.toLowerCase());
-             if (!ledger) {
-                 // Auto-create missing ledger
-                 const newLedgerRef = doc(collection(db, 'ledgers'));
-                 const newLedger = { name: pName, group: 'Sundry Debtors', companyId: activeCompany.id, userId: user.id };
-                 batch.set(newLedgerRef, newLedger);
-                 ledger = { id: newLedgerRef.id, ...newLedger };
-                 existingLedgers.push(ledger);
+         // Resolve partyId and accountId robustly to avoid UUID names
+         const resolveLedger = (nameVal: any, idVal: any, defaultGroup: string) => {
+             if (nameVal && typeof nameVal === 'string') {
+                 let ledger = existingLedgers.find(l => String(l.name || '').toLowerCase() === nameVal.toLowerCase());
+                 if (ledger) return ledger.id;
              }
-             item.partyId = ledger.id;
-         }
-         if ((item.accountId || item.accountName) && typeof (item.accountId || item.accountName) === 'string') {
-             const aName = item.accountId || item.accountName;
-             let ledger = existingLedgers.find(l => l.id === aName || String(l.name || '').toLowerCase() === aName.toLowerCase());
-             if (!ledger) {
-                 // Auto-create missing ledger
-                 const newLedgerRef = doc(collection(db, 'ledgers'));
-                 const newLedger = { name: aName, group: 'Sales Accounts', companyId: activeCompany.id, userId: user.id };
-                 batch.set(newLedgerRef, newLedger);
-                 ledger = { id: newLedgerRef.id, ...newLedger };
-                 existingLedgers.push(ledger);
+             if (idVal && typeof idVal === 'string') {
+                 let ledger = existingLedgers.find(l => l.id === idVal);
+                 if (ledger) return ledger.id;
              }
-             item.accountId = ledger.id;
-         }
+             if (idVal && typeof idVal === 'string') {
+                 let ledger = existingLedgers.find(l => String(l.name || '').toLowerCase() === idVal.toLowerCase());
+                 if (ledger) return ledger.id;
+             }
+             const strToUse = nameVal || idVal;
+             if (strToUse && typeof strToUse === 'string') {
+                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                 const finalName = (!uuidRegex.test(strToUse)) ? strToUse : (nameVal || 'Unknown Ledger');
+                 
+                 const newLedgerRef = doc(collection(db, 'ledgers'));
+                 const newLedger = { name: finalName, group: defaultGroup, companyId: activeCompany.id, userId: user.id };
+                 batch.set(newLedgerRef, newLedger);
+                 const ledger = { id: newLedgerRef.id, ...newLedger };
+                 existingLedgers.push(ledger);
+                 return ledger.id;
+             }
+             return idVal;
+         };
+
+         item.partyId = resolveLedger(item.partyName, item.partyId, 'Sundry Debtors');
+         item.accountId = resolveLedger(item.accountName, item.accountId, 'Sales Accounts');
       }
       
-      delete item.partyName; delete item.accountName; delete item.createdAt; delete item.updatedAt; delete item.importedAt; delete item.id;
-      const docRef = doc(collection(db, type));
+      delete item.partyName; delete item.accountName; delete item.createdAt; delete item.updatedAt; delete item.importedAt;
+      const docRef = item.id ? doc(db, type, item.id) : doc(collection(db, type));
       batch.set(docRef, {
         ...item,
         companyId: activeCompany.id,
         userId: user.id,
-        
       });
       addedCount++;
     });
@@ -474,6 +407,73 @@ let mappedData: any[] = [];
   };
 
   
+  
+  const handleFixData = async () => {
+    if (!window.confirm('This will fix the broken ledger names in your database. Proceed?')) return;
+    setLoading(true);
+    setMessage('Fixing data...');
+    try {
+      const vSnap = await getDocs(query(collection(db, 'vouchers'), where('companyId', '==', activeCompany.id)));
+      const lSnap = await getDocs(query(collection(db, 'ledgers'), where('companyId', '==', activeCompany.id)));
+      
+      const ledgers = lSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const vouchers = vSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Mapping recovered from user's provided logs
+      const recoveredMap: Record<string, string> = {
+        "6a95d71f-0788-467b-a18e-68d5481d91fd": "Cash A/C",
+        "cf864fae-bdb3-4b59-9fea-00c99d0235a8": "Bank A/C",
+        "a128e131-095e-4894-9e05-02f23acc8ae0": "Sales A/C",
+        "9d8f7e92-ca8a-49e4-9190-f18d47647ddf": "Pintu Kumar Chowdhury",
+        "92c56626-7634-4567-9f92-d9f3f3a6cfce": "Arijit Das",
+        "1af0d83b-2467-4f24-a1d1-e8ce9c62bdc8": "Vicky Singh",
+        "f080d6d4-1959-4cd9-965b-49ea09aa850d": "Indrajit Saha",
+        "03d084c7-6cfd-4754-a179-3bbf0f3466d4": "Abhik Chakaborty",
+        "49fab888-34ca-484e-936b-821290b6663b": "Sujal Lohar",
+        "65fd54ab-6473-4e48-a0c3-3e7e860a9c5c": "Debojit Chakraborty",
+        "e32a5c9d-f13e-427e-8dd4-68ef1666fb71": "Arghya Basu",
+        "f46ab80e-1052-49c4-8ee9-f1be2158b9ab": "Rajdip Karmakar",
+        "e84e57a4-7624-4a7c-8056-7902b5881199": "Prabhakar Mondal",
+        "87e93acb-7be5-4519-b635-539ae9f0c4d0": "Oman Razi",
+        "3bdd9654-2e60-46cc-99bb-4fdcb2ba5aa4": "Finastic Trading",
+        "a0a31d8c-93a3-4169-979f-48a2ac2c6f52": "P Choudhury and Associates",
+        "6d064039-035f-4113-93b5-bb67f2165ee2": "Jio Recharge",
+        "e79957e9-6a61-42ff-ae9e-6ceed0a8dd1c": "Government Grant",
+        "c28f16e9-00f8-4b60-a532-270591748787": "Drawings",
+        "d16c2b44-3976-435e-91c0-fb353fc49305": "Sandip Kr. Jhabak",
+        "15458443-cf77-4a01-89a0-c16cb989f03a": "Praveen Jha",
+        "4136c8ad-ed46-454c-8053-846a1a7ab885": "Airtel Recharge"
+      };
+
+      const batch = writeBatch(db);
+      let count = 0;
+      
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // We will just rename the ledgers that have a UUID as their name.
+      const dummyLedgers = ledgers.filter(l => uuidRegex.test(l.name));
+      let renamedCount = 0;
+      for (const dL of dummyLedgers) {
+          const correctName = recoveredMap[dL.name];
+          if (correctName) {
+              batch.update(doc(db, 'ledgers', dL.id), { name: correctName });
+              renamedCount++;
+          }
+      }
+      
+      // For vouchers, if they happen to have stored the UUID in partyName or accountName, clean it up.
+      // Actually, we just fixed the ledgers themselves, so DayBook which looks up ledger by ID will now get the correct name!
+
+      await batch.commit();
+      setMessage(`Successfully restored ${renamedCount} ledger names.`);
+    } catch(err: any) {
+      setMessage('Error fixing data: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>, type: 'ledgers' | 'vouchers') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -684,6 +684,11 @@ let mappedData: any[] = [];
 
       <div className="grid md:grid-cols-2 gap-6">
         
+        <div className="mb-6 flex justify-end">
+    <button onClick={handleFixData} disabled={loading} className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 text-sm font-medium">
+      Fix Missing Ledger Names
+    </button>
+  </div>
         {/* Import Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-4">
