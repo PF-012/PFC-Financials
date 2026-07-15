@@ -91,6 +91,7 @@ export default function Reports() {
       let totalSales = 0, totalPurchases = 0, totalReceipts = 0, totalPayments = 0;
       let prevTotalSales = 0, prevTotalPurchases = 0;
       let unassignedReceipts = 0, unassignedPayments = 0, unassignedDuties = 0, unassignedSales = 0, unassignedPurchases = 0;
+      let prevUnassignedSales = 0, prevUnassignedPurchases = 0;
 
       const currentChanges: Record<string, number> = {};
       const prevChanges: Record<string, number> = {};
@@ -112,9 +113,8 @@ export default function Reports() {
         const getLedgerGroup = (id: string) => ledgers.find(l => l.id === id)?.group;
 
         if (v.type === 'Sales') {
-            if (isCurrent) totalSales += baseAmt; else prevTotalSales += baseAmt;
             if (v.accountId) applyToLedger(v.accountId, -baseAmt);
-            else if (isCurrent) unassignedSales += baseAmt;
+            else { if (isCurrent) unassignedSales += baseAmt; else prevUnassignedSales += baseAmt; }
             if (v.partyId) applyToLedger(v.partyId, v.totalAmount || 0);
             if (v.cgstAmount || v.sgstAmount || v.igstAmount || v.gstAmount) {
                 const dutiesLedger = ledgers.find(l => l.group === 'Duties & Taxes');
@@ -122,9 +122,8 @@ export default function Reports() {
                 else if (isCurrent) unassignedDuties -= totalGst;
             }
         } else if (v.type === 'Purchase') {
-            if (isCurrent) totalPurchases += baseAmt; else prevTotalPurchases += baseAmt;
             if (v.accountId) applyToLedger(v.accountId, baseAmt);
-            else if (isCurrent) unassignedPurchases += baseAmt;
+            else { if (isCurrent) unassignedPurchases += baseAmt; else prevUnassignedPurchases += baseAmt; }
             if (v.partyId) applyToLedger(v.partyId, -(v.totalAmount || 0));
             if (v.cgstAmount || v.sgstAmount || v.igstAmount || v.gstAmount) {
                 const dutiesLedger = ledgers.find(l => l.group === 'Duties & Taxes');
@@ -195,6 +194,11 @@ export default function Reports() {
          else if (l.group === 'Sales Accounts') prevTotalSales -= prevChange;
       });
 
+      totalSales += unassignedSales;
+      prevTotalSales += prevUnassignedSales;
+      totalPurchases += unassignedPurchases;
+      prevTotalPurchases += prevUnassignedPurchases;
+      
       if (unassignedDuties < 0) {
          currentLiabilities -= unassignedDuties;
       } else {
@@ -455,11 +459,7 @@ export default function Reports() {
                  if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
                     bal = (reportData.currentChanges || {})[l.id] || 0;
                  }
-                 if (l.group === 'Capital Account') bal = -((reportData.ledgerBalances || {})[l.id] || 0);
-                 if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -((reportData.ledgerBalances || {})[l.id] || 0);
                  
-                 // P&L items: Incomes are credit (negative bal here means credit), Expenses are debit (positive)
-                 if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
                  
                  if (Math.abs(bal) < 0.01) return null;
                  return (
@@ -481,9 +481,7 @@ export default function Reports() {
                        if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
                           bal = (reportData.currentChanges || {})[l.id] || 0;
                        }
-                       if (l.group === 'Capital Account') bal = -((reportData.ledgerBalances || {})[l.id] || 0);
-                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -((reportData.ledgerBalances || {})[l.id] || 0);
-                       if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
+                       
                        return sum + (bal > 0 ? bal : 0);
                    }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>
@@ -493,9 +491,7 @@ export default function Reports() {
                        if (['Indirect Expenses', 'Indirect Incomes', 'Direct Expenses', 'Direct Incomes', 'Sales Accounts', 'Purchase Accounts'].includes(l.group)) {
                           bal = (reportData.currentChanges || {})[l.id] || 0;
                        }
-                       if (l.group === 'Capital Account') bal = -((reportData.ledgerBalances || {})[l.id] || 0);
-                       if (['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes'].includes(l.group)) bal = -((reportData.ledgerBalances || {})[l.id] || 0);
-                       if (['Sales Accounts', 'Indirect Incomes', 'Direct Incomes'].includes(l.group)) bal = -bal;
+                       
                        return sum + (bal < 0 ? Math.abs(bal) : 0);
                    }, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
                  </td>

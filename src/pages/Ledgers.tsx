@@ -359,7 +359,13 @@ export default function Ledgers() {
                <thead className="bg-gray-50">
                   <tr>
                      
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                     <th className="px-6 py-3 text-left w-12"><input type="checkbox" className="rounded border-gray-300 text-blue-900 focus:ring-blue-900" checked={filteredLedgers.filter(l => !l.isSystem).length > 0 && selectedIds.length === filteredLedgers.filter(l => !l.isSystem).length} onChange={(e) => {
+                           if (e.target.checked) {
+                              setSelectedIds(filteredLedgers.filter(l => !l.isSystem).map(l => l.id));
+                           } else {
+                              setSelectedIds([]);
+                           }
+                        }} /></th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GSTIN</th>
                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
@@ -369,7 +375,7 @@ export default function Ledgers() {
                <tbody className="bg-white divide-y divide-gray-200">
                   {filteredLedgers.length === 0 ? (
                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                        <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
                            No ledgers found matching your search.
                            {ledgers.length > 0 && <div className="mt-2 text-xs text-gray-400">({ledgers.length} total ledgers exist in the company)</div>}
                         </td>

@@ -277,7 +277,7 @@ export default function DayBook() {
                <tbody className="bg-white divide-y divide-gray-200">
                   {filteredVouchers.length === 0 ? (
                      <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
+                        <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">
                            No transactions found for the selected period.
                         </td>
                      </tr>

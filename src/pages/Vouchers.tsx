@@ -781,7 +781,13 @@ export default function Vouchers() {
                <thead className="bg-gray-50">
                   <tr>
                      
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12"></th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                     <th className="px-6 py-3 text-left w-12"><input type="checkbox" className="rounded border-gray-300 text-blue-900 focus:ring-blue-900" checked={filteredVouchers.length > 0 && selectedIds.length === filteredVouchers.length} onChange={(e) => {
+                           if (e.target.checked) {
+                              setSelectedIds(filteredVouchers.map(v => v.id));
+                           } else {
+                              setSelectedIds([]);
+                           }
+                        }} /></th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <select
                            value={typeFilter}
@@ -810,7 +816,7 @@ export default function Vouchers() {
                <tbody className="bg-white divide-y divide-gray-200">
                   {filteredVouchers.length === 0 ? (
                      <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                        <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
                            No vouchers found in the selected date range.
                            {vouchers.length > 0 && <div className="mt-2 text-xs text-gray-400">({vouchers.length} total vouchers exist in the company)</div>}
                         </td>
@@ -829,13 +835,13 @@ export default function Vouchers() {
    onDoubleClick={() => handleEdit(v)}
 >
                               
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">{formatDate(v.date)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap w-12" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(v.id)} onChange={() => setSelectedIds(prev => prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id])} className="rounded border-gray-300 text-blue-900 focus:ring-blue-900" /></td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">{formatDate(v.date)}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">{String(v.type || "")}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-900 font-semibold">
                                  {String(v.number || "-")}
                                  {v.againstReference && <span className="block text-gray-500 text-xs font-normal">Against: {String(v.againstReference || "")}</span>}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap w-12" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(v.id)} onChange={() => setSelectedIds(prev => prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id])} className="rounded border-gray-300 text-blue-900 focus:ring-blue-900" /></td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{party}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{party}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                  ₹ {(v.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                               </td>
