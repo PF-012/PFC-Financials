@@ -40,7 +40,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: [
           {
             role: 'user',
@@ -75,7 +75,26 @@ async function startServer() {
         return res.status(400).json({ error: 'Missing or invalid rawData array' });
       }
 
-      const itemsToProcess = rawData.slice(0, 50);
+      
+      const sanitizeData = (items) => {
+         return items.map(item => {
+            const clean = {};
+            for (const key in item) {
+               if (typeof item[key] === 'string' || typeof item[key] === 'number') {
+                  clean[key] = item[key];
+               } else if (item[key] && typeof item[key] === 'object' && !Array.isArray(item[key])) {
+                  // extract text if xml2js format
+                  if (item[key]._text) clean[key] = item[key]._text;
+                  else if (Object.keys(item[key]).length === 0) clean[key] = "";
+                  else clean[key] = JSON.stringify(item[key]).substring(0, 50); // limit nested
+               }
+            }
+            return clean;
+         });
+      };
+      
+      const itemsToProcess = sanitizeData(rawData.slice(0, 50));
+
       const prompt = `
       You are an expert accountant and data extraction AI.
       I will give you an array of raw JSON objects representing accounting ledgers/accounts imported from a file (CSV, Excel, JSON, XML).
@@ -102,7 +121,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
@@ -118,7 +137,7 @@ async function startServer() {
       res.json({ mappedLedgers });
     } catch (err) {
       console.error('AI Mapping error:', err);
-      res.status(500).json({ error: 'Failed to map ledgers via AI' });
+      res.status(500).json({ error: 'Failed to map ledgers via AI: ' + (err.message || String(err)) });
     }
   });
 
@@ -130,7 +149,28 @@ async function startServer() {
       }
 
       // To avoid huge payloads, let's chunk them if needed, but for now just process up to 100 at a time in a single request.
-      const itemsToProcess = rawData.slice(0, 15);
+      
+      const sanitizeData = (items) => {
+         return items.map(item => {
+            const clean = {};
+            for (const key in item) {
+               if (typeof item[key] === 'string' || typeof item[key] === 'number') {
+                  clean[key] = item[key];
+               } else if (item[key] && typeof item[key] === 'object' && !Array.isArray(item[key])) {
+                  if (item[key]._text) clean[key] = item[key]._text;
+                  else if (Object.keys(item[key]).length === 0) clean[key] = "";
+                  else clean[key] = JSON.stringify(item[key]).substring(0, 50);
+               } else if (Array.isArray(item[key])) {
+                   // if array of objects, just take first element or stringify short
+                   clean[key] = JSON.stringify(item[key]).substring(0, 100);
+               }
+            }
+            return clean;
+         });
+      };
+      
+      const itemsToProcess = sanitizeData(rawData.slice(0, 15));
+
 
       const prompt = `
       You are an expert accountant and data extraction AI.
@@ -168,7 +208,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
@@ -235,7 +275,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           responseMimeType: 'application/json',
