@@ -847,7 +847,7 @@ export default function Vouchers() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                  <div className="flex justify-end gap-3">
-                                    <button onClick={() => setPrintingVoucher(v)} className="text-gray-500 hover:text-gray-700" title="Print/Download PDF">
+                                    <button onClick={(e) => { e.stopPropagation(); setPrintingVoucher(v); }} className="text-gray-500 hover:text-gray-700" title="Print/Download PDF">
                                        <Printer className="w-4 h-4" />
                                     </button>
                                     <button onClick={(e) => { e.stopPropagation(); handleEdit(v); }} className="text-blue-600 hover:text-blue-900" title="Edit"><Edit2 className="w-4 h-4" /></button>
