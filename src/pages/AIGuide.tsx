@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Paperclip, X, Image as ImageIcon } from 'lucide-react';
+import { Send, Bot, User, Loader2, Paperclip, X, Image as ImageIcon, Trash2 } from 'lucide-react';
 
 interface Attachment {
   base64: string;
@@ -126,11 +126,32 @@ export default function AIGuide() {
     }
   };
 
+  const handleClearChat = () => {
+    if (window.confirm('Are you sure you want to clear the chat history?')) {
+      setMessages([{
+        id: 'welcome',
+        role: 'ai',
+        text: "Hello! I'm your AI Accounting Assistant. You can ask me how to record transactions, clarify accounting scenarios, or get general accounting advice. How can I help you today?"
+      }]);
+      localStorage.removeItem('ai-chat-history');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-8rem)]">
-      <div className="flex flex-col gap-1 mb-4">
-        <h1 className="text-2xl font-semibold text-gray-900">AI Accounting Guide</h1>
-        <p className="text-sm text-gray-500">Ask the AI assistant about journal entries, vouchers, and get help with data import errors.</p>
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-gray-900">AI Accounting Guide</h1>
+          <p className="text-sm text-gray-500">Ask the AI assistant about journal entries, vouchers, and get help with data import errors.</p>
+        </div>
+        <button
+          onClick={handleClearChat}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors border border-gray-200 hover:border-red-200"
+          title="Clear Chat History"
+        >
+          <Trash2 className="w-4 h-4" />
+          Clear Chat
+        </button>
       </div>
 
       <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
