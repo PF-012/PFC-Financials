@@ -1,4 +1,5 @@
 import express from 'express';
+// Updated to use the correct model for Vercel deployment
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
