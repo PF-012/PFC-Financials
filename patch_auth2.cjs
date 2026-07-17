@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+const fs = require('fs');
+
+const code = `import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -54,3 +56,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+`;
+
+fs.writeFileSync('src/context/AuthContext.tsx', code);
+console.log("Restored AuthContext to real Supabase auth.");

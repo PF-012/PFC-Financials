@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { LogOut, Activity, Building, BookOpen, LayoutDashboard, Lightbulb, Database, FileSpreadsheet, Menu, Printer, CalendarDays, Settings, Star, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { LogOut, Activity, Building, BookOpen, LayoutDashboard, Lightbulb, Database, FileSpreadsheet, Menu, Printer, CalendarDays, Settings, Star, ShieldCheck, CheckCircle2, MessageSquareText } from 'lucide-react';
 import { Navigate, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import PrintModal from './PrintModal';
 import Logo from './Logo';
@@ -44,7 +44,9 @@ export default function Layout() {
 
   const navItems = [
     { icon: <Lightbulb className="w-5 h-5" />, label: 'Golden Rules', to: '/rules' },
+    { icon: <MessageSquareText className="w-5 h-5" />, label: 'AI Guide', to: '/ai-guide' },
     { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', to: '/' },
+    
     { icon: <BookOpen className="w-5 h-5" />, label: 'Ledgers', to: '/ledgers' },
     { icon: <CalendarDays className="w-5 h-5" />, label: 'Day Book', to: '/daybook' },
     { icon: <Activity className="w-5 h-5" />, label: 'Vouchers', to: '/vouchers' },
