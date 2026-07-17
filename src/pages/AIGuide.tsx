@@ -106,7 +106,10 @@ export default function AIGuide() {
         })
       });
 
-      if (!res.ok) throw new Error('Failed to fetch response');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
       const data = await res.json();
       
       if (data.error) {

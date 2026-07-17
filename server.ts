@@ -1,7 +1,7 @@
 import express from 'express';
 // Updated to use the correct model for Vercel deployment
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
+
 import { GoogleGenAI } from '@google/genai';
 
 let ai = null;
@@ -365,6 +365,8 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    const viteName = 'vi' + 'te';
+    const { createServer: createViteServer } = await import(viteName);
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
