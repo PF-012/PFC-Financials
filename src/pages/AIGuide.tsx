@@ -109,11 +109,14 @@ export default function AIGuide() {
       if (!res.ok) throw new Error('Failed to fetch response');
       const data = await res.json();
       
+      if (data.error) {
+        throw new Error(data.error);
+      }
       const aiMessage: ChatMessage = { id: (Date.now() + 1).toString(), role: 'ai', text: data.reply || "I didn't quite get that." };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error(error);
-      const errorMessage: ChatMessage = { id: (Date.now() + 1).toString(), role: 'ai', text: "Sorry, I encountered an error while trying to respond." };
+      const errorMessage: ChatMessage = { id: (Date.now() + 1).toString(), role: 'ai', text: "Error: " + (error instanceof Error ? error.message : String(error)) };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
