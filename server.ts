@@ -40,7 +40,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: [
           {
             role: 'user',
@@ -121,7 +121,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
@@ -208,7 +208,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
@@ -292,7 +292,7 @@ async function startServer() {
       });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: contents,
         config: { 
             temperature: 0.7,
@@ -332,7 +332,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           responseMimeType: 'application/json',
