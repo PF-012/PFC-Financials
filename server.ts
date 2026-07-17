@@ -3,7 +3,17 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let ai = null;
+function getAIClient() {
+  if (!ai) {
+    if (process.env.GEMINI_API_KEY) {
+      ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    } else {
+      throw new Error('GEMINI_API_KEY is not configured on the server. Please add it to your environment variables.');
+    }
+  }
+  return ai;
+}
 
 async function startServer() {
   const app = express();
@@ -39,8 +49,8 @@ async function startServer() {
       }
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await getAIClient().models.generateContent({
+        model: 'gemini-flash-latest',
         contents: [
           {
             role: 'user',
@@ -120,8 +130,8 @@ async function startServer() {
       }]
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await getAIClient().models.generateContent({
+        model: 'gemini-flash-latest',
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
@@ -207,8 +217,8 @@ async function startServer() {
       Only return the valid items. If an item in the raw data doesn't look like a transaction, you can omit it.
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await getAIClient().models.generateContent({
+        model: 'gemini-flash-latest',
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
@@ -291,8 +301,8 @@ async function startServer() {
           parts: currentParts
       });
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await getAIClient().models.generateContent({
+        model: 'gemini-flash-latest',
         contents: contents,
         config: { 
             temperature: 0.7,
@@ -331,8 +341,8 @@ async function startServer() {
       Return ONLY valid JSON.
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await getAIClient().models.generateContent({
+        model: 'gemini-flash-latest',
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           responseMimeType: 'application/json',
