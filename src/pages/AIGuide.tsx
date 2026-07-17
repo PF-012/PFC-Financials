@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Paperclip, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Send, Bot, User as UserIcon, Loader2, Paperclip, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface Attachment {
   base64: string;
@@ -15,21 +16,33 @@ interface ChatMessage {
 }
 
 export default function AIGuide() {
+  const { user } = useAuth();
+  const storageKey = user ? `ai-chat-history-${user.id}` : 'ai-chat-history';
+
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const saved = localStorage.getItem('ai-chat-history');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error("Failed to load chat history", e);
-    }
     return [{
       id: 'welcome',
       role: 'ai',
       text: "Hello! I'm your AI Accounting Assistant. You can ask me how to record transactions, clarify accounting scenarios, or get general accounting advice. How can I help you today?"
     }];
   });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setMessages(JSON.parse(saved));
+      } else {
+        setMessages([{
+          id: 'welcome',
+          role: 'ai',
+          text: "Hello! I'm your AI Accounting Assistant. You can ask me how to record transactions, clarify accounting scenarios, or get general accounting advice. How can I help you today?"
+        }]);
+      }
+    } catch (e) {
+      console.error("Failed to load chat history", e);
+    }
+  }, [storageKey]);
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,12 +56,28 @@ export default function AIGuide() {
 
   useEffect(() => {
     scrollToBottom();
-    try {
-      localStorage.setItem('ai-chat-history', JSON.stringify(messages));
-    } catch (e) {
-      console.error("Failed to save chat history", e);
+    // Only save if it's more than just the welcome message, or if it changed
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+      } catch (e) {
+        console.error("Failed to save chat history", e);
+      }
     }
-  }, [messages]);
+  }, [messages, storageKey]);
+
+  const handleClearChat = () => {
+    if (window.confirm('Are you sure you want to clear the chat history?')) {
+      const welcome = [{
+        id: 'welcome',
+        role: 'ai',
+        text: "Hello! I'm your AI Accounting Assistant. You can ask me how to record transactions, clarify accounting scenarios, or get general accounting advice. How can I help you today?"
+      }];
+      setMessages(welcome);
+      localStorage.removeItem(storageKey);
+    }
+  };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -79,7 +108,6 @@ export default function AIGuide() {
 
   const handleSend = async () => {
     if (!input.trim() && attachments.length === 0) return;
-
     const userMessage: ChatMessage = { 
       id: Date.now().toString(), 
       role: 'user', 
@@ -89,7 +117,6 @@ export default function AIGuide() {
     
     // We send previous chat history up to the last 10 messages to maintain context
     const chatHistory = messages.slice(-10);
-
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setAttachments([]);
@@ -115,6 +142,7 @@ export default function AIGuide() {
       if (data.error) {
         throw new Error(data.error);
       }
+      
       const aiMessage: ChatMessage = { id: (Date.now() + 1).toString(), role: 'ai', text: data.reply || "I didn't quite get that." };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
@@ -123,17 +151,6 @@ export default function AIGuide() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleClearChat = () => {
-    if (window.confirm('Are you sure you want to clear the chat history?')) {
-      setMessages([{
-        id: 'welcome',
-        role: 'ai',
-        text: "Hello! I'm your AI Accounting Assistant. You can ask me how to record transactions, clarify accounting scenarios, or get general accounting advice. How can I help you today?"
-      }]);
-      localStorage.removeItem('ai-chat-history');
     }
   };
 
@@ -180,7 +197,7 @@ export default function AIGuide() {
                   <div className="text-[14px] whitespace-pre-wrap leading-relaxed">{msg.text}</div>
                 </div>
 
-                {msg.role === 'user' && <User className="w-5 h-5 shrink-0 mt-0.5 text-white/80" />}
+                {msg.role === 'user' && <UserIcon className="w-5 h-5 shrink-0 mt-0.5 text-white/80" />}
               </div>
             </div>
           ))}
