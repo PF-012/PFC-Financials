@@ -22,7 +22,11 @@ export default function Companies() {
     email: '',
     phone: '',
     financialYearStart: '2025-04-01',
-    booksBeginFrom: '2025-04-01'
+    booksBeginFrom: '2025-04-01',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    branchName: ''
   };
   const [form, setForm] = useState(initialForm);
 
@@ -104,6 +108,27 @@ export default function Companies() {
              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">Address</label>
                 <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm"></textarea>
+             </div>
+             
+             {/* Bank Details */}
+             <div className="md:col-span-2 pt-4 border-t border-gray-200 mt-2">
+                <h3 className="text-lg font-medium text-gray-900">Bank Details</h3>
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+                <input value={form.bankName || ''} onChange={e => setForm({...form, bankName: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm" />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700">Account Number</label>
+                <input value={form.accountNumber || ''} onChange={e => setForm({...form, accountNumber: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm" />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700">IFSC Code</label>
+                <input value={form.ifscCode || ''} onChange={e => setForm({...form, ifscCode: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm uppercase" />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700">Branch Name</label>
+                <input value={form.branchName || ''} onChange={e => setForm({...form, branchName: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm" />
              </div>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
