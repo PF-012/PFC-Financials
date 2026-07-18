@@ -14,6 +14,10 @@ export interface Company {
   address: string;
   gstin: string;
   pan: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchName?: string;
   email: string;
   phone: string;
   financialYearStart: string;
@@ -68,6 +72,7 @@ export interface Voucher {
   tdsAmount?: number;
   narration?: string;
   itemName?: string;
+  paymentMode?: string;
   items?: any[];
 }
 
@@ -89,3 +94,4 @@ export interface BankTransaction {
   reconciliationDate?: string;
   instrumentNumber?: string;
 }
+
