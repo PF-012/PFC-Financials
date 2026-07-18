@@ -47,8 +47,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           return comps[0];
         } else if (comps.length === 0) {
           return null;
-        } else if (prevActive && !comps.find(c => c.id === prevActive.id)) {
-          return comps[0] || null;
+        } else if (prevActive) {
+          const updatedActive = comps.find(c => c.id === prevActive.id);
+          if (updatedActive) {
+            return updatedActive;
+          } else {
+            return comps[0] || null;
+          }
         }
         return prevActive;
       });
