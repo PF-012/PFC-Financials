@@ -3,155 +3,206 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 import { Voucher, VoucherItem, Ledger } from '../types';
 import { format } from 'date-fns';
 
+function numberToWords(num: number): string {
+  const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+  const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
+
+  if (num === 0) return 'Zero only';
+  
+  const strNum = Math.floor(num).toString();
+  if (strNum.length > 9) return 'overflow';
+  
+  const n = ('000000000' + strNum).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+  if (!n) return ''; 
+  
+  let str = '';
+  str += (parseInt(n[1]) !== 0) ? (a[Number(n[1])] || b[n[1][0] as any] + ' ' + a[n[1][1] as any]) + 'Crore ' : '';
+  str += (parseInt(n[2]) !== 0) ? (a[Number(n[2])] || b[n[2][0] as any] + ' ' + a[n[2][1] as any]) + 'Lakh ' : '';
+  str += (parseInt(n[3]) !== 0) ? (a[Number(n[3])] || b[n[3][0] as any] + ' ' + a[n[3][1] as any]) + 'Thousand ' : '';
+  str += (parseInt(n[4]) !== 0) ? (a[Number(n[4])] || b[n[4][0] as any] + ' ' + a[n[4][1] as any]) + 'Hundred ' : '';
+  str += (parseInt(n[5]) !== 0) ? ((str !== '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0] as any] + ' ' + a[n[5][1] as any]) + ' ' : '';
+  return str.trim() === '' ? '' : str.trim() + ' Only';
+}
+
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    fontSize: 12,
+    padding: 30,
+    fontSize: 10,
     fontFamily: 'Helvetica',
-    color: '#1e293b',
+    color: '#000000',
   },
-  logo: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  titleBlock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    paddingBottom: 10,
   },
-  headerInfo: {
-    alignItems: "center",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 15,
-    textAlign: 'center',
-    marginBottom: 30,
-    borderBottom: '1 solid #e2e8f0',
-    paddingBottom: 15,
-  },
-  companyName: {
-    fontSize: 20,
+  docTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
     textTransform: 'uppercase',
   },
-  companyAddress: {
-    fontSize: 10,
-    color: '#64748b',
+  metaBlock: {
+    alignItems: 'flex-end',
   },
-  rowInfo: {
+  metaText: {
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  metaBold: {
+    fontWeight: 'bold',
+  },
+  addressGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  colLeft: {
-    width: '50%',
+  addressBox: {
+    width: '48%',
   },
-  colRight: {
-    width: '50%',
-    alignItems: 'flex-end',
-  },
-  label: {
-    fontSize: 10,
-    color: '#64748b',
-    marginBottom: 2,
-  },
-  value: {
+  addressTitle: {
     fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    backgroundColor: '#f0f0f0',
+    padding: 4,
+    textTransform: 'uppercase',
+  },
+  entityName: {
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
   },
+  addressText: {
+    fontSize: 10,
+    marginBottom: 2,
+    lineHeight: 1.4,
+  },
   table: {
     width: '100%',
-    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    borderTop: '1 solid #0f172a',
-    borderBottom: '1 solid #0f172a',
-    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    backgroundColor: '#f0f0f0',
+    padding: 6,
     fontWeight: 'bold',
   },
   tableRow: {
     flexDirection: 'row',
-    borderBottom: '1 solid #e2e8f0',
-    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    padding: 6,
+  },
+  tableRowNoBorder: {
+    flexDirection: 'row',
+    padding: 6,
+  },
+  colSl: {
+    width: '10%',
+    textAlign: 'center',
   },
   colParticulars: {
     flex: 1,
   },
   colAmount: {
-    width: 100,
+    width: '25%',
     textAlign: 'right',
-  },
-  totalsContainer: {
-    marginTop: 20,
-    alignItems: 'flex-end',
-  },
-  totalsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: 250,
-    paddingVertical: 6,
-    borderBottom: '1 solid #e2e8f0',
   },
   totalsRowFinal: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: 250,
-    paddingVertical: 10,
-    borderTop: '2 solid #0f172a',
-    borderBottom: '2 solid #0f172a',
-    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#000000',
+    padding: 6,
+    backgroundColor: '#f0f0f0',
   },
-  totalsLabel: {
-    color: '#64748b',
-  },
-  totalsValue: {
-    fontWeight: 'bold',
-  },
-  narrationContainer: {
-    marginTop: 20,
-  },
-  narrationLabel: {
+  amountInWords: {
+    marginTop: 5,
     fontSize: 10,
-    color: '#64748b',
-    marginBottom: 4,
     fontStyle: 'italic',
   },
-  narrationText: {
-    fontSize: 11,
+  amountInWordsBold: {
+    fontWeight: 'bold',
   },
-  footer: {
-    marginTop: 60,
+  bottomGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    borderTop: '1 solid #e2e8f0',
-    paddingTop: 15,
+    marginTop: 30,
+    flex: 1,
   },
-  footerText: {
-    fontSize: 9,
-    color: '#64748b',
+  bottomBoxLeft: {
+    width: '45%',
+  },
+  bottomBoxRight: {
+    width: '45%',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  bankDetailsBox: {
+    borderWidth: 1,
+    borderColor: '#000000',
+    padding: 8,
+    marginTop: 10,
+  },
+  bankDetailsTitle: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    paddingBottom: 2,
+  },
+  bankRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  bankLabel: {
+    width: 80,
+  },
+  bankValue: {
+    flex: 1,
+    fontWeight: 'bold',
+  },
+  paymentTermsBox: {
+    borderWidth: 1,
+    borderColor: '#000000',
+    padding: 8,
+    marginTop: 10,
+    width: '100%',
   },
   signatureBox: {
-    width: 150,
-    borderTop: '1 solid #cbd5e1',
+    marginTop: 50,
+    borderTopWidth: 1,
+    borderTopColor: '#000000',
     paddingTop: 5,
+    width: 150,
     textAlign: 'center',
-    fontSize: 10,
   },
+  footerNotice: {
+    marginTop: 30,
+    fontSize: 8,
+    textAlign: 'center',
+    color: '#666666',
+  }
 });
 
 interface VoucherPDFProps {
   voucher: Voucher;
-  company: { name: string; address?: string; phone?: string; email?: string; };
-  party?: Ledger;
+  company: { name: string; address?: string; phone?: string; email?: string; gstin?: string; pan?: string; };
+  party?: Ledger | null;
+  account?: Ledger | null;
 }
 
-export const VoucherPDFDocument: React.FC<VoucherPDFProps> = ({ voucher, company, party }) => {
-  const formatAmt = (amt: number) => amt.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+export const VoucherPDFDocument: React.FC<VoucherPDFProps> = ({ voucher, company, party, account }) => {
+  const formatAmt = (amt: number) => amt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   
-    let cgstAmt = voucher.cgstAmount || 0;
+  let cgstAmt = voucher.cgstAmount || 0;
   let sgstAmt = voucher.sgstAmount || 0;
   let igstAmt = voucher.igstAmount || 0;
   let unallocatedGstAmt = 0;
@@ -184,109 +235,173 @@ export const VoucherPDFDocument: React.FC<VoucherPDFProps> = ({ voucher, company
   const totalGstInVoucher = cgstAmt + sgstAmt + igstAmt + unallocatedGstAmt;
   const baseValue = (voucher.totalAmount || 0) - totalGstInVoucher + (voucher.tdsAmount || 0);
 
+  const docTitle = voucher.type === 'Sales' ? 'INVOICE' : voucher.type.toUpperCase();
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          
-          <View style={styles.headerInfo}>
-            <Text style={styles.companyName}>{company.name}</Text>
-            {company.address && <Text style={styles.companyAddress}>{company.address}</Text>}
-            {company.phone && <Text style={styles.companyAddress}>Contact: {company.phone}</Text>}
-            {company.email && <Text style={styles.companyAddress}>Email: {company.email}</Text>}
+        
+        {/* Header Block */}
+        <View style={styles.titleBlock}>
+          <Text style={styles.docTitle}>{docTitle}</Text>
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaText}>Ref No: <Text style={styles.metaBold}>{voucher.number || 'Auto'}</Text></Text>
+            <Text style={styles.metaText}>Date: <Text style={styles.metaBold}>{format(new Date(voucher.date), 'dd-MM-yyyy')}</Text></Text>
           </View>
         </View>
 
-        <View style={styles.rowInfo}>
-          <View style={styles.colLeft}>
-            <Text style={[styles.value, { fontSize: 14 }]}>{voucher.type} Voucher</Text>
-            <View style={{ marginTop: 10 }}>
-              <Text style={styles.label}>Date:</Text>
-              <Text style={styles.value}>{format(new Date(voucher.date), 'dd-MM-yyyy')}</Text>
-            </View>
-          </View>
-          <View style={styles.colRight}>
-            <Text style={styles.label}>Party Details:</Text>
-            <Text style={styles.value}>{party ? party.name : 'Unknown'}</Text>
-            {party && party.address && <Text style={{ fontSize: 10, marginBottom: 2 }}>{party.address}</Text>}
-            {party && party.contactNo && <Text style={{ fontSize: 10, marginBottom: 2 }}>Contact: {party.contactNo}</Text>}
-            {party && party.email && <Text style={{ fontSize: 10, marginBottom: 2 }}>Email: {party.email}</Text>}
-            {party && party.hsnCode && <Text style={{ fontSize: 10, marginBottom: 2 }}>HSN/SAC: {party.hsnCode}</Text>}
-            {party && party.gstin && <Text style={{ fontSize: 10, marginBottom: 2 }}>GSTIN: {party.gstin}</Text>}
-          </View>
-        </View>
-
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.colParticulars}>Particulars</Text>
-            <Text style={styles.colAmount}>Amount (Rs)</Text>
-          </View>
-          
-          <View style={styles.tableRow}>
-            <Text style={styles.colParticulars}>{voucher.itemName || 'Item / Service'}</Text>
-            <Text style={styles.colAmount}>{formatAmt(baseValue)}</Text>
+        {/* Address Grid */}
+        <View style={styles.addressGrid}>
+          {/* Bill To (Left) */}
+          <View style={styles.addressBox}>
+            <Text style={styles.addressTitle}>
+           {voucher.type === 'Receipt' ? 'Received From' : voucher.type === 'Payment' ? 'Paid To' : 'Bill To'}
+         </Text>
+            <Text style={styles.entityName}>{party ? party.name : 'Cash'}</Text>
+            {party?.address && <Text style={styles.addressText}>{party.address}</Text>}
+            {party?.contactNo && <Text style={styles.addressText}>Contact: {party.contactNo}</Text>}
+            {party?.email && <Text style={styles.addressText}>Email: {party.email}</Text>}
+            {party?.gstin && <Text style={styles.addressText}>GSTIN: {party.gstin}</Text>}
           </View>
 
-          {cgstAmt > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.colParticulars, { fontStyle: 'italic', color: '#64748b' }]}>Add: CGST {(voucher.cgstRate || party?.cgstRate) ? `(@${voucher.cgstRate || party?.cgstRate}%)` : ''}</Text>
-              <Text style={styles.colAmount}>{formatAmt(cgstAmt)}</Text>
-            </View>
-          )}
-          
-          {sgstAmt > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.colParticulars, { fontStyle: 'italic', color: '#64748b' }]}>Add: SGST {(voucher.sgstRate || party?.sgstRate) ? `(@${voucher.sgstRate || party?.sgstRate}%)` : ''}</Text>
-              <Text style={styles.colAmount}>{formatAmt(sgstAmt)}</Text>
-            </View>
-          )}
-
-          {igstAmt > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.colParticulars, { fontStyle: 'italic', color: '#64748b' }]}>Add: IGST {(voucher.igstRate || party?.igstRate) ? `(@${voucher.igstRate || party?.igstRate}%)` : ''}</Text>
-              <Text style={styles.colAmount}>{formatAmt(igstAmt)}</Text>
-            </View>
-          )}
-
-          {unallocatedGstAmt > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.colParticulars, { fontStyle: 'italic', color: '#64748b' }]}>Add: GST</Text>
-              <Text style={styles.colAmount}>{formatAmt(unallocatedGstAmt)}</Text>
-            </View>
-          )}
-
-          {(voucher.tdsAmount || 0) > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.colParticulars, { fontStyle: 'italic', color: '#64748b' }]}>Less: TDS</Text>
-              <Text style={styles.colAmount}>({formatAmt(voucher.tdsAmount || 0)})</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.totalsContainer}>
-          <View style={styles.totalsRowFinal}>
-            <Text style={{ fontWeight: 'bold' }}>Total Net Amount</Text>
-            <Text style={{ fontWeight: 'bold', fontSize: 14 }}>Rs {formatAmt(voucher.totalAmount || 0)}</Text>
+          {/* From (Right) */}
+          <View style={styles.addressBox}>
+            <Text style={styles.addressTitle}>
+           {voucher.type === 'Receipt' ? 'Received By' : voucher.type === 'Payment' ? 'Paid By' : 'From'}
+         </Text>
+            <Text style={styles.entityName}>{company.name}</Text>
+            {company.address && <Text style={styles.addressText}>{company.address}</Text>}
+            {company.phone && <Text style={styles.addressText}>Contact: {company.phone}</Text>}
+            {company.email && <Text style={styles.addressText}>Email: {company.email}</Text>}
+            {company.gstin && <Text style={styles.addressText}>GSTIN: {company.gstin}</Text>}
+            {company.pan && <Text style={styles.addressText}>PAN: {company.pan}</Text>}
           </View>
         </View>
 
-        {voucher.narration && (
-          <View style={styles.narrationContainer}>
-            <Text style={styles.narrationLabel}>Narration:</Text>
-            <Text style={styles.narrationText}>{voucher.narration}</Text>
+        
+        {/* Particulars Table */}
+        {['Receipt', 'Payment'].includes(voucher.type) ? (
+          <View style={{ width: '100%', marginTop: 15, borderWidth: 1, borderColor: '#000', padding: 12, flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f9f9f9' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 12 }}>Amount {voucher.type === 'Receipt' ? 'Received' : 'Paid'}:</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 14 }}>Rs. {formatAmt(voucher.totalAmount || 0)}</Text>
+          </View>
+        ) : (
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={styles.colSl}>Sl. No.</Text>
+              <Text style={styles.colParticulars}>Description</Text>
+              <Text style={styles.colAmount}>Amount (Rs)</Text>
+            </View>
+            
+            <View style={styles.tableRowNoBorder}>
+              <Text style={styles.colSl}>1</Text>
+              <Text style={styles.colParticulars}>{voucher.itemName || 'Item / Service'}</Text>
+              <Text style={styles.colAmount}>{formatAmt(baseValue)}</Text>
+            </View>
+
+            {cgstAmt > 0 && ['Sales', 'Purchase'].includes(voucher.type) && (
+              <View style={styles.tableRowNoBorder}>
+                <Text style={styles.colSl}></Text>
+                <Text style={styles.colParticulars}>Add: CGST {(voucher.cgstRate || party?.cgstRate) ? `@${voucher.cgstRate || party?.cgstRate}%` : ''}</Text>
+                <Text style={styles.colAmount}>{formatAmt(cgstAmt)}</Text>
+              </View>
+            )}
+            
+            {sgstAmt > 0 && ['Sales', 'Purchase'].includes(voucher.type) && (
+              <View style={styles.tableRowNoBorder}>
+                <Text style={styles.colSl}></Text>
+                <Text style={styles.colParticulars}>Add: SGST {(voucher.sgstRate || party?.sgstRate) ? `@${voucher.sgstRate || party?.sgstRate}%` : ''}</Text>
+                <Text style={styles.colAmount}>{formatAmt(sgstAmt)}</Text>
+              </View>
+            )}
+
+            {igstAmt > 0 && ['Sales', 'Purchase'].includes(voucher.type) && (
+              <View style={styles.tableRowNoBorder}>
+                <Text style={styles.colSl}></Text>
+                <Text style={styles.colParticulars}>Add: IGST {(voucher.igstRate || party?.igstRate) ? `@${voucher.igstRate || party?.igstRate}%` : ''}</Text>
+                <Text style={styles.colAmount}>{formatAmt(igstAmt)}</Text>
+              </View>
+            )}
+
+            {unallocatedGstAmt > 0 && ['Sales', 'Purchase'].includes(voucher.type) && (
+              <View style={styles.tableRowNoBorder}>
+                <Text style={styles.colSl}></Text>
+                <Text style={styles.colParticulars}>Add: GST</Text>
+                <Text style={styles.colAmount}>{formatAmt(unallocatedGstAmt)}</Text>
+              </View>
+            )}
+
+            {(voucher.tdsAmount || 0) > 0 && ['Sales', 'Purchase'].includes(voucher.type) && (
+              <View style={styles.tableRowNoBorder}>
+                <Text style={styles.colSl}></Text>
+                <Text style={styles.colParticulars}>Less: TDS</Text>
+                <Text style={styles.colAmount}>({formatAmt(voucher.tdsAmount || 0)})</Text>
+              </View>
+            )}
+
+            {/* Padding for table */}
+            <View style={{ height: 20 }}></View>
+
+            <View style={styles.totalsRowFinal}>
+              <Text style={styles.colSl}></Text>
+              <Text style={[styles.colParticulars, { fontWeight: 'bold' }]}>Total Amount</Text>
+              <Text style={[styles.colAmount, { fontWeight: 'bold' }]}>{formatAmt(voucher.totalAmount || 0)}</Text>
+            </View>
           </View>
         )}
+        
+        <Text style={styles.amountInWords}>
+          Amount in Words: <Text style={styles.amountInWordsBold}>Rupees {numberToWords(voucher.totalAmount || 0)}</Text>
+        </Text>
 
-        <View style={styles.footer}>
-          <View>
-            <Text style={styles.footerText}>Computer generated document,</Text>
-            <Text style={styles.footerText}>no signature required.</Text>
-            <Text style={[styles.footerText, { marginTop: 4 }]}>E. & O.E.</Text>
-          </View>
-          <View>
-            <Text style={styles.signatureBox}>Authorised Signatory</Text>
+        {voucher.narration && (
+          <Text style={{ marginTop: 10, fontSize: 10, fontStyle: 'italic' }}>Narration: {voucher.narration}</Text>
+        )}
+
+        {/* Bottom Section */}
+        <View style={styles.bottomGrid}>
+          {/* Bank Details */}
+          <View style={styles.bottomBoxLeft}>
+            {!['Receipt', 'Payment'].includes(voucher.type) && (
+            <View style={styles.bankDetailsBox}>
+              <Text style={styles.bankDetailsTitle}>Bank Details</Text>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>Bank Name:</Text>
+                <Text style={styles.bankValue}>{company.bankName || '_________________'}</Text>
+              </View>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>A/C Name:</Text>
+                <Text style={styles.bankValue}>{company.name}</Text>
+              </View>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>A/C No:</Text>
+                <Text style={styles.bankValue}>{company.accountNumber || '_________________'}</Text>
+              </View>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>IFSC Code:</Text>
+                <Text style={styles.bankValue}>{company.ifscCode || '_________________'}</Text>
+              </View>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>Branch:</Text>
+                <Text style={styles.bankValue}>{company.branchName || '_________________'}</Text>
+              </View>
+            </View>
+            )}          </View>
+          {/* Right Side: Mode/Terms and Signature */}
+          <View style={styles.bottomBoxRight}>
+            <View style={styles.paymentTermsBox}>
+              <Text style={styles.bankDetailsTitle}>Mode/Terms of Payment</Text>
+              <Text style={{ fontSize: 10, marginTop: 4 }}>{voucher.paymentMode ? voucher.paymentMode : '_______________'}</Text>
+            </View>
+
+            <View style={{ marginTop: 'auto' }}>
+              <Text style={styles.signatureBox}>Authorised Signatory</Text>
+            </View>
           </View>
         </View>
+
+        <Text style={styles.footerNotice}>This is a computer generated document and does not require a physical signature.</Text>
+
       </Page>
     </Document>
   );
