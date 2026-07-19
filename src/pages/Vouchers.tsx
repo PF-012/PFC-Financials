@@ -678,6 +678,10 @@ export default function Vouchers() {
              <input value={form.itemName || ''} onChange={e => setForm({...form, itemName: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm" placeholder="e.g. Consulting Services" />
           </div>
           <div>
+             <label className="block text-sm font-medium text-gray-700">Mode/Terms of Payment (e.g. Google Pay, Netbanking, Cheque)</label>
+             <input value={form.paymentMode || ''} onChange={e => setForm({...form, paymentMode: e.target.value})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm" placeholder="e.g. Google Pay" />
+          </div>
+          <div>
              <label className="block text-sm font-medium text-gray-700">Narration</label>
              <textarea value={form.narration} onChange={e => setForm({...form, narration: e.target.value})} rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm"></textarea>
           </div>
