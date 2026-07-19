@@ -278,12 +278,19 @@ export const VoucherPDFDocument: React.FC<VoucherPDFProps> = ({ voucher, company
           </View>
         </View>
 
-        
-        {/* Particulars Table */}
+       {/* Particulars Table */}
         {['Receipt', 'Payment'].includes(voucher.type) ? (
-          <View style={{ width: '100%', marginTop: 15, borderWidth: 1, borderColor: '#000', padding: 12, flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f9f9f9' }}>
-            <Text style={{ fontWeight: 'bold', fontSize: 12 }}>Amount {voucher.type === 'Receipt' ? 'Received' : 'Paid'}:</Text>
-            <Text style={{ fontWeight: 'bold', fontSize: 14 }}>Rs. {formatAmt(voucher.totalAmount || 0)}</Text>
+          <View style={{ width: '100%', marginTop: 15, borderWidth: 1, borderColor: '#000', backgroundColor: '#f9f9f9', flexDirection: 'column' }}>
+            {voucher.itemName && (
+              <View style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#ddd', flexDirection: 'row' }}>
+                 <Text style={{ fontWeight: 'bold', fontSize: 12, marginRight: 8 }}>Particulars:</Text>
+                 <Text style={{ fontSize: 12 }}>{voucher.itemName}</Text>
+              </View>
+            )}
+            <View style={{ padding: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 12 }}>Amount {voucher.type === 'Receipt' ? 'Received' : 'Paid'}:</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 14 }}>Rs. {formatAmt(voucher.totalAmount || 0)}</Text>
+            </View>
           </View>
         ) : (
           <View style={styles.table}>
