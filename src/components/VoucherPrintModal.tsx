@@ -207,11 +207,18 @@ export default function VoucherPrintModal({ isOpen, onClose, voucher, company, p
               </div>
 
               
-              {/* Table / Amount Details */}
+             {/* Table / Amount Details */}
               {['Receipt', 'Payment'].includes(voucher.type) ? (
-                <div className="w-full mt-4 border border-slate-900 p-4 flex justify-between items-center bg-slate-50">
-                  <span className="font-bold text-slate-900 text-sm">Amount {voucher.type === 'Receipt' ? 'Received' : 'Paid'}:</span>
-                  <span className="font-bold text-slate-900 text-lg">Rs. {formatAmt(voucher.totalAmount || 0)}</span>
+                <div className="w-full mt-4 flex flex-col border border-slate-900 bg-slate-50">
+                  {voucher.itemName && (
+                    <div className="p-4 border-b border-slate-200 text-slate-800 text-sm">
+                       <span className="font-bold mr-2">Particulars:</span> {voucher.itemName}
+                    </div>
+                  )}
+                  <div className="p-4 flex justify-between items-center">
+                    <span className="font-bold text-slate-900 text-sm">Amount {voucher.type === 'Receipt' ? 'Received' : 'Paid'}:</span>
+                    <span className="font-bold text-slate-900 text-lg">Rs. {formatAmt(voucher.totalAmount || 0)}</span>
+                  </div>
                 </div>
               ) : (
                 <div className="w-full mt-4 border border-slate-900">
