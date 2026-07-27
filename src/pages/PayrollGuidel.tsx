@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Bot, Send, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function PayrollAiGuide() {
+export default function PayrollGuide() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
     { role: 'ai', text: 'Hi! I am your AI Payroll Guide. I can help you with Tax Calculations, EPF rules, New vs Old Regime comparisons, or any other payroll-related queries based on the 2026 Tax Rules. How can I help you today?' }
