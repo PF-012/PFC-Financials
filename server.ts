@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import apiApp from './api/index';
+import apiApp from './api/index.ts';
 
 async function startServer() {
   const app = express();
@@ -41,4 +41,3 @@ export default async function (req: any, res: any) {
   const app = await appPromise;
   if (app) app(req, res);
 }
-
