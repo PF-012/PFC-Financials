@@ -1,6 +1,0 @@
-{
-  "name": "FinFlow",
-  "description": "A basic full-stack template with React and Express.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
