@@ -95,3 +95,49 @@ export interface BankTransaction {
   instrumentNumber?: string;
 }
 
+export interface Employee {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  name: string;
+  designation: string;
+  department: string;
+  pan?: string;
+  bankAccount?: string;
+  bankName?: string;
+  ifscCode?: string;
+  branchName?: string;
+  basicPay: number;
+  dateOfJoining?: string;
+  location?: string;
+  uan?: string;
+  pfAccountNumber?: string;
+  gender?: string;
+  taxRegime?: 'old' | 'new';
+}
+
+export interface SalarySlip {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  month: string; // e.g., '2023-10'
+  date: string;
+  payDate?: string;
+  basicPay: number;
+  da: number;
+  hra: number;
+  ta: number;
+  childrenAllowance?: number;
+  medicalAllowance?: number;
+  fixedAllowance?: number;
+  otherAllowances: number;
+  professionalTax?: number;
+  epf?: number;
+  esi?: number;
+  incomeTax?: number;
+  charges?: number;
+  deductions: number;
+  grossEarnings?: number;
+  totalDeductions?: number;
+  netPay: number;
+}
