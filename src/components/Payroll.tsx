@@ -3,7 +3,6 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc, d
 import { useAppContext } from '../context/AppContext';
 import { Employee, SalarySlip } from '../types';
 import { Plus, Printer, Trash2, Users, FileText, Edit, Save, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { NumericFormat } from 'react-number-format';
 import SalarySlipPrintModal from '../components/SalarySlipPrintModal';
 
@@ -14,7 +13,6 @@ const INDIAN_BANKS = [
 ];
 
 export default function Payroll() {
-  const navigate = useNavigate();
   const { activeCompany } = useAppContext();
   const [activeTab, setActiveTab] = useState<'employees' | 'slips'>('employees');
   
@@ -589,4 +587,3 @@ export default function Payroll() {
       )}
     </div>
   );
-}
