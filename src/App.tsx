@@ -17,6 +17,7 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const AIGuide = React.lazy(() => import('./pages/AIGuide'));
+const PayrollAiGuide = React.lazy(() => import('./pages/PayrollAiGuide'));
 
 import SplashScreen from './components/SplashScreen';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
@@ -77,6 +78,7 @@ function App() {
                             <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
               <Route path="ai-guide" element={<AIGuide />} />
+              <Route path="payroll-ai-guide" element={<PayrollAiGuide />} />
               
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
@@ -88,4 +90,5 @@ function App() {
     </ErrorBoundary>
   );
 }
+
 export default App;
