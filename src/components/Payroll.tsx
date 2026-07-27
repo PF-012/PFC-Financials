@@ -221,12 +221,6 @@ export default function Payroll() {
             <Users className="w-4 h-4" /> Add Employee
           </button>
           <button
-            onClick={() => navigate('/ai-guide')}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors shadow-sm"
-          >
-            <span className="text-lg leading-none">✨</span> AI Guide
-          </button>
-          <button
             onClick={() => { setActiveTab('slips'); setShowSlipForm(true); setSlipForm({ basicPay: 0, da: 0, hra: 0, ta: 0, childrenAllowance: 0, medicalAllowance: 0, fixedAllowance: 0, otherAllowances: 0, professionalTax: 0, epf: 0, esi: 0, incomeTax: 0, charges: 0, deductions: 0, netPay: 0, grossEarnings: 0, totalDeductions: 0, enableEpf: false, enableEsi: false }); }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-sm"
           >
