@@ -9,6 +9,7 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Companies = React.lazy(() => import('./pages/Companies'));
 const Ledgers = React.lazy(() => import('./pages/Ledgers'));
 const Vouchers = React.lazy(() => import('./pages/Vouchers'));
+const Payroll = React.lazy(() => import('./pages/Payroll'));
 const Reports = React.lazy(() => import('./pages/Reports'));
 const ImportExport = React.lazy(() => import('./pages/ImportExport'));
 const DayBook = React.lazy(() => import('./pages/DayBook'));
@@ -31,8 +32,9 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetError
         <p className="text-gray-600 mb-6 text-sm">
           A potential bug was caught and prevented from crashing the system. 
           <br/><br/>
-          <span className="font-mono bg-gray-100 p-1 rounded text-xs text-red-800 break-all">{error.message}</span><pre className="mt-4 text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40">{error.stack}</pre>
+          <span className="font-mono bg-gray-100 p-1 rounded text-xs text-red-800 break-all">{error.message}</span>
         </p>
+        <pre className="mt-4 mb-6 text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40">{error.stack}</pre>
         <button
           onClick={resetErrorBoundary}
           className="inline-flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
@@ -69,9 +71,10 @@ function App() {
               <Route path="ledgers" element={<Ledgers />} />
               <Route path="daybook" element={<DayBook />} />
               <Route path="vouchers" element={<Vouchers />} />
+              <Route path="payroll" element={<Payroll />} />
               <Route path="reports" element={<Reports />} />
               <Route path="data" element={<ImportExport />} />
-              <Route path="settings" element={<Settings />} />
+                            <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
               <Route path="ai-guide" element={<AIGuide />} />
               
@@ -85,5 +88,4 @@ function App() {
     </ErrorBoundary>
   );
 }
-
 export default App;
