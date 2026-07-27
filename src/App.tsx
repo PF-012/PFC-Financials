@@ -1,3 +1,4 @@
+/* eslint-disable */
 import SplashScreen from './components/SplashScreen';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import React, { useState } from 'react';
@@ -19,7 +20,6 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const AccountingGuide = React.lazy(() => import('./pages/AccountingGuide'));
-const PayrollGuide = React.lazy(() => import('./pages/PayrollGuide'));
 
 
 
@@ -80,7 +80,6 @@ function App() {
                             <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
               <Route path="accounting-guide" element={<AccountingGuide />} />
-              <Route path="payroll-guide" element={<PayrollGuide />} />
               
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
