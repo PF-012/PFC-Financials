@@ -15,7 +15,7 @@ interface ChatMessage {
   attachments?: Attachment[];
 }
 
-export default function AIGuide() {
+export default function AccountingGuide() {
   const { user } = useAuth();
   const storageKey = user ? `ai-chat-history-${user.id}` : 'ai-chat-history';
 
