@@ -12,7 +12,6 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Companies = React.lazy(() => import('./pages/Companies'));
 const Ledgers = React.lazy(() => import('./pages/Ledgers'));
 const Vouchers = React.lazy(() => import('./pages/Vouchers'));
-const Payroll = React.lazy(() => import('./pages/Payroll'));
 const Reports = React.lazy(() => import('./pages/Reports'));
 const ImportExport = React.lazy(() => import('./pages/ImportExport'));
 const DayBook = React.lazy(() => import('./pages/DayBook'));
@@ -74,7 +73,6 @@ function App() {
               <Route path="ledgers" element={<Ledgers />} />
               <Route path="daybook" element={<DayBook />} />
               <Route path="vouchers" element={<Vouchers />} />
-              <Route path="payroll" element={<Payroll />} />
               <Route path="reports" element={<Reports />} />
               <Route path="data" element={<ImportExport />} />
                             <Route path="settings" element={<Settings />} />
