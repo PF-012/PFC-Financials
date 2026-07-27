@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import apiApp from './api/index.ts';
+import apiApp from './api/index';
 
 async function startServer() {
   const app = express();
