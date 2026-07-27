@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Bot, Send, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function AiGuide() {
+export default function PayrollAiGuide() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
     { role: 'ai', text: 'Hi! I am your AI Payroll Guide. I can help you with Tax Calculations, EPF rules, New vs Old Regime comparisons, or any other payroll-related queries based on the 2026 Tax Rules. How can I help you today?' }
@@ -49,8 +49,8 @@ export default function AiGuide() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[600px]">
         <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-gray-50">
           {messages.map((msg, i) => (
-            <div key={i} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
-              <div className={\`max-w-[80%] rounded-2xl p-4 shadow-sm \${msg.role === 'user' ? 'bg-blue-900 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}\`}>
+            <div key={i} className={`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm \${msg.role === 'user' ? 'bg-blue-900 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
                 <p className="whitespace-pre-wrap">{msg.text}</p>
               </div>
             </div>
