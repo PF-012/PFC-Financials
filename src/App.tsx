@@ -1,3 +1,5 @@
+import SplashScreen from './components/SplashScreen';
+import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -16,11 +18,11 @@ const DayBook = React.lazy(() => import('./pages/DayBook'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
 const Admin = React.lazy(() => import('./pages/Admin'));
-const AIGuide = React.lazy(() => import('./pages/AIGuide'));
-const PayrollAiGuide = React.lazy(() => import('./pages/PayrollAiGuide'));
+const AccountingGuide = React.lazy(() => import('./pages/AccountingGuide'));
+const PayrollGuide = React.lazy(() => import('./pages/PayrollGuide'));
 
-import SplashScreen from './components/SplashScreen';
-import { AlertTriangle, RefreshCcw } from 'lucide-react';
+
+
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
   return (
@@ -77,8 +79,8 @@ function App() {
               <Route path="data" element={<ImportExport />} />
                             <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
-              <Route path="ai-guide" element={<AIGuide />} />
-              <Route path="payroll-ai-guide" element={<PayrollAiGuide />} />
+              <Route path="accounting-guide" element={<AccountingGuide />} />
+              <Route path="payroll-guide" element={<PayrollGuide />} />
               
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
