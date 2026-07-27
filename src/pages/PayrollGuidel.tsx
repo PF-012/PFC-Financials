@@ -49,8 +49,8 @@ export default function PayrollGuide() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[600px]">
         <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-gray-50">
           {messages.map((msg, i) => (
-            <div key={i} className={`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm \${msg.role === 'user' ? 'bg-blue-900 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${msg.role === 'user' ? 'bg-blue-900 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
                 <p className="whitespace-pre-wrap">{msg.text}</p>
               </div>
             </div>
