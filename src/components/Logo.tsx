@@ -6,7 +6,7 @@ export default function Logo({ className = "w-8 h-8" }: { className?: string }) 
   if (!imgError) {
     return (
       <img 
-        src="/logo.png" 
+        src="/Trans Logo.png" 
         alt="Logo" 
         className={`${className} object-contain`}
         onError={() => setImgError(true)}
