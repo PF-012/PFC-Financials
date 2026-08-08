@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { LogOut, Activity, Building, BookOpen, LayoutDashboard, Lightbulb, Database, FileSpreadsheet, Menu, Printer, CalendarDays, Settings, Star, ShieldCheck, CheckCircle2, MessageSquareText } from 'lucide-react';
+import { LogOut, FileText, Activity, Building, BookOpen, LayoutDashboard, Lightbulb, Database, FileSpreadsheet, Menu, Printer, CalendarDays, Settings, Star, ShieldCheck, CheckCircle2, MessageSquareText } from 'lucide-react';
 import { Navigate, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import PrintModal from './PrintModal';
 import Logo from './Logo';
