@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Logo({ className = "w-8 h-8" }: { className?: string }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (!imgError) {
+    return (
+      <img 
+        src="/Trans%20Logo.png" 
+        alt="Logo" 
+        className={`${className} object-contain`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
   return (
     <svg viewBox="0 0 400 200" className={className} xmlns="http://www.w3.org/2000/svg">
       <defs>
