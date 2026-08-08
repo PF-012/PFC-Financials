@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
+export const LOGO_SRC = '/Trans%20Logo.png';
+
 export default function Logo({ className = "w-8 h-8" }: { className?: string }) {
   const [imgError, setImgError] = useState(false);
 
   if (!imgError) {
     return (
       <img 
-        src="/Trans Logo.png" 
+        src={LOGO_SRC} 
         alt="Logo" 
         className={`${className} object-contain`}
         onError={() => setImgError(true)}
