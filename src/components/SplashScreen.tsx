@@ -1,33 +1,56 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import Logo, { LOGO_SRC } from './Logo';
+import { LOGO_SRC } from './Logo';
 
 const SPLASH_VIDEO_SRC = '/splash.mp4';
 
 export default function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [isVisible, setIsVisible] = useState(true);
-  const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const finishedRef = useRef(false);
 
-  const handleFinish = useCallback(() => {
+  const complete = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
     setIsVisible(false);
-    setTimeout(onComplete, 800);
+    window.setTimeout(onComplete, 800);
   }, [onComplete]);
 
   useEffect(() => {
-    // Fallback timer just in case video doesn't play or end event fails
-    const timer = setTimeout(() => {
-      handleFinish();
-    }, 60000);
-    return () => clearTimeout(timer);
-  }, [handleFinish]);
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch {
+        setVideoError(true);
+        complete();
+      }
+    };
+
+    if (video.readyState >= 2) {
+      void playVideo();
+    } else {
+      video.addEventListener('loadeddata', playVideo, { once: true });
+    }
+
+    return () => video.removeEventListener('loadeddata', playVideo);
+  }, [complete]);
+
+  useEffect(() => {
+    // Never leave the application stuck on the splash if the video fails.
+    const timer = window.setTimeout(complete, 12000);
+    return () => window.clearTimeout(timer);
+  }, [complete]);
 
   const handleVideoError = () => {
     setVideoError(true);
-    setTimeout(handleFinish, 4000);
+    complete();
   };
 
   return (
@@ -39,33 +62,24 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
         >
-          <video 
-            src={SPLASH_VIDEO_SRC}
-            autoPlay
-            muted
-            playsInline
-            preload="auto"
-            poster={LOGO_SRC}
-            onCanPlay={() => setVideoReady(true)}
-            onLoadedData={() => setVideoReady(true)}
-            onEnded={handleFinish}
-            onError={handleVideoError}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-              videoReady && !videoError ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-          <motion.div
-            className={`absolute inset-0 flex items-center justify-center bg-black transition-opacity duration-700 ${
-              videoReady && !videoError ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-          >
-            <Logo className="w-40 h-40 sm:w-56 sm:h-56 drop-shadow-2xl" />
-          </motion.div>
+          {!videoError && (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              poster={LOGO_SRC}
+              onEnded={complete}
+              onError={handleVideoError}
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src={SPLASH_VIDEO_SRC} type="video/mp4" />
+            </video>
+          )}
+
           <button
-            onClick={handleFinish}
+            onClick={complete}
             className="absolute top-6 right-6 z-10 px-6 py-2 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm rounded-full text-sm font-medium transition-colors border border-white/10"
           >
             Skip
