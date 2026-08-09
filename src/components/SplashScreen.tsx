@@ -2,32 +2,65 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo, { LOGO_SRC } from './Logo';
 
-// Vite serves files in public/ from the site root. Keep this filename lowercase
-// to avoid case-sensitivity differences between Windows and Vercel/Linux.
+// Files inside public/ are served from the site root by Vite/Vercel.
 const SPLASH_VIDEO_SRC = '/splash.mp4';
 
 export default function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  const [phase, setPhase] = useState<'video' | 'logo'>('video');
   const [isVisible, setIsVisible] = useState(true);
-  const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const finishedRef = useRef(false);
 
-  const handleFinish = useCallback(() => {
+  const complete = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
     setIsVisible(false);
-    setTimeout(onComplete, 800);
+    window.setTimeout(onComplete, 800);
   }, [onComplete]);
 
+  const showLogo = useCallback(() => {
+    if (finishedRef.current) return;
+    setPhase('logo');
+    window.setTimeout(complete, 1400);
+  }, [complete]);
+
   useEffect(() => {
-    // Do not leave users stuck if autoplay/video loading fails.
-    const timer = setTimeout(handleFinish, 12000);
-    return () => clearTimeout(timer);
-  }, [handleFinish]);
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Explicitly request muted playback. This is more reliable than relying
+    // only on the autoplay attribute across browsers and Vercel previews.
+    video.muted = true;
+    video.defaultMuted = true;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch {
+        setVideoError(true);
+        showLogo();
+      }
+    };
+
+    if (video.readyState >= 2) {
+      void playVideo();
+    } else {
+      video.addEventListener('loadeddata', playVideo, { once: true });
+    }
+
+    return () => video.removeEventListener('loadeddata', playVideo);
+  }, [showLogo]);
+
+  useEffect(() => {
+    // A broken/unsupported video must never block the application.
+    const timer = window.setTimeout(showLogo, 12000);
+    return () => window.clearTimeout(timer);
+  }, [showLogo]);
 
   const handleVideoError = () => {
     setVideoError(true);
-    setTimeout(handleFinish, 1500);
+    showLogo();
   };
 
   return (
@@ -39,35 +72,35 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
         >
-          <video
-            src={SPLASH_VIDEO_SRC}
-            autoPlay
-            muted
-            playsInline
-            preload="metadata"
-            poster={LOGO_SRC}
-            onCanPlay={() => setVideoReady(true)}
-            onLoadedData={() => setVideoReady(true)}
-            onEnded={handleFinish}
-            onError={handleVideoError}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-              videoReady && !videoError ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
+          {phase === 'video' && !videoError && (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              poster={LOGO_SRC}
+              onEnded={showLogo}
+              onError={handleVideoError}
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src={SPLASH_VIDEO_SRC} type="video/mp4" />
+            </video>
+          )}
 
-          <motion.div
-            className={`absolute inset-0 flex items-center justify-center bg-black transition-opacity duration-700 ${
-              videoReady && !videoError ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-          >
-            <Logo className="w-40 h-40 sm:w-56 sm:h-56 drop-shadow-2xl" />
-          </motion.div>
+          {phase === 'logo' && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center bg-black"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+            >
+              <Logo className="w-40 h-40 sm:w-56 sm:h-56 drop-shadow-2xl" />
+            </motion.div>
+          )}
 
           <button
-            onClick={handleFinish}
+            onClick={complete}
             className="absolute top-6 right-6 z-10 px-6 py-2 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm rounded-full text-sm font-medium transition-colors border border-white/10"
           >
             Skip
