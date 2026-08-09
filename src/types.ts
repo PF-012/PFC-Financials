@@ -94,4 +94,3 @@ export interface BankTransaction {
   reconciliationDate?: string;
   instrumentNumber?: string;
 }
-
