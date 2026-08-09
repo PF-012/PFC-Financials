@@ -1,12 +1,13 @@
 /* eslint-disable */
+import React, { useState } from 'react';
 import SplashScreen from './components/SplashScreen';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
-import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
+
 const Login = React.lazy(() => import('./pages/Login'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Companies = React.lazy(() => import('./pages/Companies'));
@@ -20,23 +21,36 @@ const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const AccountingGuide = React.lazy(() => import('./pages/AccountingGuide'));
 
-
-
-
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
+function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="h-8 w-8 text-red-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Software Protected</h2>
+
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          Software Protected
+        </h2>
+
         <p className="text-gray-600 mb-6 text-sm">
-          A potential bug was caught and prevented from crashing the system. 
-          <br/><br/>
-          <span className="font-mono bg-gray-100 p-1 rounded text-xs text-red-800 break-all">{error.message}</span>
+          A potential bug was caught and prevented from crashing the system.
         </p>
-        <pre className="mt-4 mb-6 text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40">{error.stack}</pre>
+
+        <div className="font-mono bg-gray-100 p-2 rounded text-xs text-red-800 break-all mb-4">
+          {error.message}
+        </div>
+
+        <pre className="text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40 mb-6">
+          {error.stack}
+        </pre>
+
         <button
           onClick={resetErrorBoundary}
           className="inline-flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
@@ -50,42 +64,62 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetError
 }
 
 function App() {
-
   const [showSplash, setShowSplash] = useState(true);
 
+  // Show splash video first
   if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    return (
+      <SplashScreen
+        onComplete={() => setShowSplash(false)}
+      />
+    );
   }
 
   return (
-
-    <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => window.location.reload()}
+    >
       <AuthProvider>
-      <AppProvider>
-        <BrowserRouter>
-          <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div></div>}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="rules" element={<GoldenRules />} />
-              <Route path="companies" element={<Companies />} />
-              <Route path="ledgers" element={<Ledgers />} />
-              <Route path="daybook" element={<DayBook />} />
-              <Route path="vouchers" element={<Vouchers />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="data" element={<ImportExport />} />
-                            <Route path="settings" element={<Settings />} />
-              <Route path="admin" element={<Admin />} />
-              <Route path="accounting-guide" element={<AccountingGuide />} />
-              
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-          </React.Suspense>
-        </BrowserRouter>
-      </AppProvider>
-    </AuthProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <React.Suspense
+              fallback={
+                <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
+                </div>
+              }
+            >
+              <Routes>
+                <Route path="/login" element={<Login />} />
+
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+
+                  <Route path="rules" element={<GoldenRules />} />
+                  <Route path="companies" element={<Companies />} />
+                  <Route path="ledgers" element={<Ledgers />} />
+                  <Route path="daybook" element={<DayBook />} />
+                  <Route path="vouchers" element={<Vouchers />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="data" element={<ImportExport />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="admin" element={<Admin />} />
+                  <Route
+                    path="accounting-guide"
+                    element={<AccountingGuide />}
+                  />
+
+                  <Route
+                    path="*"
+                    element={<Navigate to="/" replace />}
+                  />
+                </Route>
+              </Routes>
+            </React.Suspense>
+          </BrowserRouter>
+        </AppProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
