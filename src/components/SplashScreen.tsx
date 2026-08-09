@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LOGO_SRC } from './Logo';
 
 const SPLASH_VIDEO_SRC = '/splash.mp4';
 
@@ -69,7 +68,6 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
               muted
               playsInline
               preload="auto"
-              poster={LOGO_SRC}
               onEnded={complete}
               onError={handleVideoError}
               className="absolute inset-0 w-full h-full object-cover"
