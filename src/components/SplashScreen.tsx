@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo, { LOGO_SRC } from './Logo';
 
+// Vite serves files in public/ from the site root. Keep this filename lowercase
+// to avoid case-sensitivity differences between Windows and Vercel/Linux.
 const SPLASH_VIDEO_SRC = '/splash.mp4';
 
 export default function SplashScreen({ onComplete }: { onComplete: () => void }) {
@@ -18,16 +20,14 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
   }, [onComplete]);
 
   useEffect(() => {
-    // Fallback timer just in case video doesn't play or end event fails
-    const timer = setTimeout(() => {
-      handleFinish();
-    }, 60000);
+    // Do not leave users stuck if autoplay/video loading fails.
+    const timer = setTimeout(handleFinish, 12000);
     return () => clearTimeout(timer);
   }, [handleFinish]);
 
   const handleVideoError = () => {
     setVideoError(true);
-    setTimeout(handleFinish, 4000);
+    setTimeout(handleFinish, 1500);
   };
 
   return (
@@ -39,12 +39,12 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
         >
-          <video 
+          <video
             src={SPLASH_VIDEO_SRC}
             autoPlay
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             poster={LOGO_SRC}
             onCanPlay={() => setVideoReady(true)}
             onLoadedData={() => setVideoReady(true)}
@@ -54,6 +54,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
               videoReady && !videoError ? 'opacity-100' : 'opacity-0'
             }`}
           />
+
           <motion.div
             className={`absolute inset-0 flex items-center justify-center bg-black transition-opacity duration-700 ${
               videoReady && !videoError ? 'opacity-0 pointer-events-none' : 'opacity-100'
@@ -64,6 +65,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
           >
             <Logo className="w-40 h-40 sm:w-56 sm:h-56 drop-shadow-2xl" />
           </motion.div>
+
           <button
             onClick={handleFinish}
             className="absolute top-6 right-6 z-10 px-6 py-2 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm rounded-full text-sm font-medium transition-colors border border-white/10"
