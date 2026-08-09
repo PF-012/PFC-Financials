@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import Logo, { LOGO_SRC } from './Logo';
+import { LOGO_SRC } from './Logo';
 
-// Files inside public/ are served from the site root by Vite/Vercel.
 const SPLASH_VIDEO_SRC = '/splash.mp4';
 
 export default function SplashScreen({ onComplete }: { onComplete: () => void }) {
-  const [phase, setPhase] = useState<'video' | 'logo'>('video');
   const [isVisible, setIsVisible] = useState(true);
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -19,18 +17,10 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
     window.setTimeout(onComplete, 800);
   }, [onComplete]);
 
-  const showLogo = useCallback(() => {
-    if (finishedRef.current) return;
-    setPhase('logo');
-    window.setTimeout(complete, 1400);
-  }, [complete]);
-
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Explicitly request muted playback. This is more reliable than relying
-    // only on the autoplay attribute across browsers and Vercel previews.
     video.muted = true;
     video.defaultMuted = true;
 
@@ -39,7 +29,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
         await video.play();
       } catch {
         setVideoError(true);
-        showLogo();
+        complete();
       }
     };
 
@@ -50,17 +40,17 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
     }
 
     return () => video.removeEventListener('loadeddata', playVideo);
-  }, [showLogo]);
+  }, [complete]);
 
   useEffect(() => {
-    // A broken/unsupported video must never block the application.
-    const timer = window.setTimeout(showLogo, 12000);
+    // Never leave the application stuck on the splash if the video fails.
+    const timer = window.setTimeout(complete, 12000);
     return () => window.clearTimeout(timer);
-  }, [showLogo]);
+  }, [complete]);
 
   const handleVideoError = () => {
     setVideoError(true);
-    showLogo();
+    complete();
   };
 
   return (
@@ -72,7 +62,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
         >
-          {phase === 'video' && !videoError && (
+          {!videoError && (
             <video
               ref={videoRef}
               autoPlay
@@ -80,23 +70,12 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
               playsInline
               preload="auto"
               poster={LOGO_SRC}
-              onEnded={showLogo}
+              onEnded={complete}
               onError={handleVideoError}
               className="absolute inset-0 w-full h-full object-cover"
             >
               <source src={SPLASH_VIDEO_SRC} type="video/mp4" />
             </video>
-          )}
-
-          {phase === 'logo' && (
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center bg-black"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
-            >
-              <Logo className="w-40 h-40 sm:w-56 sm:h-56 drop-shadow-2xl" />
-            </motion.div>
           )}
 
           <button
