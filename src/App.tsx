@@ -4,7 +4,7 @@ import SplashScreen from './components/SplashScreen';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
 
@@ -34,23 +34,16 @@ function ErrorFallback({
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="h-8 w-8 text-red-600" />
         </div>
-
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
-          Software Protected
-        </h2>
-
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Software Protected</h2>
         <p className="text-gray-600 mb-6 text-sm">
           A potential bug was caught and prevented from crashing the system.
         </p>
-
         <div className="font-mono bg-gray-100 p-2 rounded text-xs text-red-800 break-all mb-4">
           {error.message}
         </div>
-
         <pre className="text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40 mb-6">
           {error.stack}
         </pre>
-
         <button
           onClick={resetErrorBoundary}
           className="inline-flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
@@ -63,20 +56,17 @@ function ErrorFallback({
   );
 }
 
-function App() {
-  // The splash is a first-visit experience. localStorage is intentionally used
-  // so the OAuth redirect after Google sign-in cannot trigger it a second time.
+function AppContent() {
+  const { user } = useAuth();
   const [showSplash, setShowSplash] = useState(() => {
     try {
-      return localStorage.getItem('pfc_splash_shown') !== 'true';
+      return !user && localStorage.getItem('pfc_splash_shown') !== 'true';
     } catch {
-      return true;
+      return !user;
     }
   });
 
   const handleSplashComplete = () => {
-    // Persist this before leaving the splash so authentication/navigation
-    // can never make the splash appear again on this browser.
     try {
       localStorage.setItem('pfc_splash_shown', 'true');
     } catch {
@@ -85,54 +75,61 @@ function App() {
     setShowSplash(false);
   };
 
+  // If authentication already exists (including after an OAuth redirect),
+  // never show the splash again.
+  if (user) {
+    return <Application />;
+  }
+
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
+  return <Application />;
+}
+
+function Application() {
+  return (
+    <AppProvider>
+      <BrowserRouter>
+        <React.Suspense
+          fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="rules" element={<GoldenRules />} />
+              <Route path="companies" element={<Companies />} />
+              <Route path="ledgers" element={<Ledgers />} />
+              <Route path="daybook" element={<DayBook />} />
+              <Route path="vouchers" element={<Vouchers />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="data" element={<ImportExport />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="admin" element={<Admin />} />
+              <Route path="accounting-guide" element={<AccountingGuide />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </React.Suspense>
+      </BrowserRouter>
+    </AppProvider>
+  );
+}
+
+function App() {
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
       onReset={() => window.location.reload()}
     >
       <AuthProvider>
-        <AppProvider>
-          <BrowserRouter>
-            <React.Suspense
-              fallback={
-                <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
-                </div>
-              }
-            >
-              <Routes>
-                <Route path="/login" element={<Login />} />
-
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-
-                  <Route path="rules" element={<GoldenRules />} />
-                  <Route path="companies" element={<Companies />} />
-                  <Route path="ledgers" element={<Ledgers />} />
-                  <Route path="daybook" element={<DayBook />} />
-                  <Route path="vouchers" element={<Vouchers />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="data" element={<ImportExport />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="admin" element={<Admin />} />
-                  <Route
-                    path="accounting-guide"
-                    element={<AccountingGuide />}
-                  />
-
-                  <Route
-                    path="*"
-                    element={<Navigate to="/" replace />}
-                  />
-                </Route>
-              </Routes>
-            </React.Suspense>
-          </BrowserRouter>
-        </AppProvider>
+        <AppContent />
       </AuthProvider>
     </ErrorBoundary>
   );
