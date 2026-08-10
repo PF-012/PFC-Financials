@@ -53,13 +53,13 @@ export async function getDocs(queryObj: any) {
   builder = applyConstraints(builder, queryObj);
   const { data, error } = await builder;
   if (error) throw error;
-  
+
   const docs = (data || []).map((row: any) => ({
     id: row.id,
     data: () => row,
     ref: { type: 'doc', path: queryObj.path, id: row.id }
   }));
-  
+
   return {
     docs,
     forEach: (cb: (doc: any) => void) => docs.forEach(cb)
@@ -77,30 +77,49 @@ export async function getDoc(docObj: any) {
   };
 }
 
+/**
+ * Insert a row while automatically attaching the currently authenticated
+ * Supabase user when the caller has not supplied userId.
+ *
+ * This is important for private payroll data: the frontend must never create
+ * an employee without an owner, otherwise an RLS policy based on auth.uid()
+ * cannot protect the row correctly.
+ */
 export async function addDoc(coll: any, data: any) {
-  const { data: res, error } = await supabase.from(coll.path).insert(data).select().single();
+  const payload = { ...data };
+
+  if (!payload.userId) {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!authData.user) {
+      throw new Error('You are not signed in. Please sign in again before saving.');
+    }
+    payload.userId = authData.user.id;
+  }
+
+  const { data: res, error } = await supabase.from(coll.path).insert(payload).select().single();
   if (error) throw error;
   eventTarget.dispatchEvent(new Event('mutation'));
-  return { id: res.id, type: 'doc', path: coll.path   };
+  return { id: res.id, type: 'doc', path: coll.path };
 }
 
 export async function setDoc(docObj: any, data: any, options?: { merge?: boolean }) {
   const payload = { id: docObj.id, ...data };
   const { error } = await supabase.from(docObj.path).upsert(payload);
   if (error) throw error;
-eventTarget.dispatchEvent(new Event('mutation'));
+  eventTarget.dispatchEvent(new Event('mutation'));
 }
 
 export async function updateDoc(docObj: any, data: any) {
   const { error } = await supabase.from(docObj.path).update(data).eq('id', docObj.id);
   if (error) throw error;
-eventTarget.dispatchEvent(new Event('mutation'));
+  eventTarget.dispatchEvent(new Event('mutation'));
 }
 
 export async function deleteDoc(docObj: any) {
   const { error } = await supabase.from(docObj.path).delete().eq('id', docObj.id);
   if (error) throw error;
-eventTarget.dispatchEvent(new Event('mutation'));
+  eventTarget.dispatchEvent(new Event('mutation'));
 }
 
 export function onSnapshot(queryObj: any, callback: (snapshot: any) => void) {
@@ -111,8 +130,6 @@ export function onSnapshot(queryObj: any, callback: (snapshot: any) => void) {
   const channelId = `public:${queryObj.path}-${Math.random().toString(36).substring(7)}`;
   const channel = supabase.channel(channelId)
     .on('postgres_changes', { event: '*', schema: 'public', table: queryObj.path }, payload => {
-      // Re-fetch everything on change for simplicity, to match the snapshot behaviour correctly
-      // In a production app, you'd merge the payload manually.
       getDocs(queryObj).then(callback).catch(console.error);
     })
     .subscribe();
@@ -139,13 +156,12 @@ export function writeBatch(db: any) {
       return this;
     },
     async commit() {
-      // Supabase RPC or individual calls (we'll do individual for simplicity)
       for (const op of operations) {
         if (op.type === 'set') await setDoc(op.doc, op.data);
         else if (op.type === 'update') await updateDoc(op.doc, op.data);
         else if (op.type === 'delete') await deleteDoc(op.doc);
       }
-    eventTarget.dispatchEvent(new Event('mutation'));
+      eventTarget.dispatchEvent(new Event('mutation'));
     }
   };
 }
