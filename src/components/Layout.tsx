@@ -51,6 +51,7 @@ export default function Layout() {
     { icon: <CalendarDays className="w-5 h-5" />, label: 'Day Book', to: '/daybook' },
     { icon: <Activity className="w-5 h-5" />, label: 'Vouchers', to: '/vouchers' },
     { icon: <FileSpreadsheet className="w-5 h-5" />, label: 'Reports', to: '/reports' },
+    { icon: <Users className="w-5 h-5" />, label: 'Payroll', to: '/payroll' },
     { icon: <Database className="w-5 h-5" />, label: 'Data & Sync', to: '/data' },
     { icon: <Building className="w-5 h-5" />, label: 'Companies', to: '/companies' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', to: '/settings' }
