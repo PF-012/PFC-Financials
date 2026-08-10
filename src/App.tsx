@@ -64,24 +64,32 @@ function ErrorFallback({
 }
 
 function App() {
+  // The splash is a first-visit experience. localStorage is intentionally used
+  // so the OAuth redirect after Google sign-in cannot trigger it a second time.
   const [showSplash, setShowSplash] = useState(() => {
-    // Show splash only once per browser session.
-    return sessionStorage.getItem('pfc_splash_shown') !== 'true';
+    try {
+      return localStorage.getItem('pfc_splash_shown') !== 'true';
+    } catch {
+      return true;
+    }
   });
 
   const handleSplashComplete = () => {
-    // Mark splash as completed BEFORE navigating to the application.
-    sessionStorage.setItem('pfc_splash_shown', 'true');
+    // Persist this before leaving the splash so authentication/navigation
+    // can never make the splash appear again on this browser.
+    try {
+      localStorage.setItem('pfc_splash_shown', 'true');
+    } catch {
+      // Ignore storage errors; the current app session will still continue.
+    }
     setShowSplash(false);
   };
 
   if (showSplash) {
-    return (
-      <SplashScreen onComplete={handleSplashComplete} />
-    );
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-return (
+  return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
       onReset={() => window.location.reload()}
