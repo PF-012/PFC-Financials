@@ -94,3 +94,70 @@ export interface BankTransaction {
   reconciliationDate?: string;
   instrumentNumber?: string;
 }
+
+
+
+
+export interface Employee {
+  id: string;
+  companyId: string;
+  employeeCode: string;
+  name: string;
+  designation: string;
+  department: string;
+  dateOfJoining: string;
+  pan: string;
+  uan?: string; // For PF
+  pfNumber?: string;
+  esiNumber?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  basicSalary: number; // Monthly basic
+  hra: number; // Monthly HRA
+  conveyanceAllowance: number;
+  medicalAllowance: number;
+  specialAllowance: number;
+  isActive: boolean;
+  deductPT?: boolean;
+}
+
+export interface SalarySlip {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  month: number; // 1-12
+  year: number;
+  
+  // Earnings
+  basic: number;
+  hra: number;
+  conveyance: number;
+  medical: number;
+  special: number;
+  grossEarnings: number;
+  
+  // Deductions
+  pf: number; // Provident Fund (Employee contribution)
+  esi: number; // Employee State Insurance (Employee contribution)
+  pt: number; // Professional Tax
+  tds: number; // Tax Deducted at Source
+  otherDeductions: number;
+  totalDeductions: number;
+  
+  // Net
+  netSalary: number;
+  
+  // Additional info
+  workingDays: number;
+  presentDays: number;
+  leaves: number;
+  taxBreakdown?: {
+    annualGross: number;
+    standardDeduction: number;
+    taxableIncome: number;
+    taxSlabs: { slab: string, rate: string, amount: number }[];
+    totalAnnualTax: number;
+    monthlyTds: number;
+  };
+}
