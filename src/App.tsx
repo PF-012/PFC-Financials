@@ -17,6 +17,7 @@ const Reports = React.lazy(() => import('./pages/Reports'));
 const ImportExport = React.lazy(() => import('./pages/ImportExport'));
 const DayBook = React.lazy(() => import('./pages/DayBook'));
 const Settings = React.lazy(() => import('./pages/Settings'));
+const Payroll = React.lazy(() => import('./pages/Payroll'));
 const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const AccountingGuide = React.lazy(() => import('./pages/AccountingGuide'));
@@ -110,6 +111,7 @@ function Application() {
               <Route path="vouchers" element={<Vouchers />} />
               <Route path="reports" element={<Reports />} />
               <Route path="data" element={<ImportExport />} />
+              <Route path="payroll" element={<Payroll />} />
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
               <Route path="accounting-guide" element={<AccountingGuide />} />
