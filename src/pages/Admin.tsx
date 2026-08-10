@@ -14,6 +14,7 @@ interface PaymentRequest {
   plan: string;
   status: 'pending' | 'approved' | 'rejected';
   licenseKey?: string;
+  createdAt: string;
 }
 
 export default function Admin() {
@@ -41,7 +42,7 @@ export default function Admin() {
       snapshot.forEach((doc) => {
         data.push({ id: doc.id, ...doc.data() } as Company);
       });
-      setCompanies(data); console.log("Admin companies length:", data.length, data.map(d => d.name));
+      setCompanies(data);
     });
 
     return () => {
@@ -63,11 +64,12 @@ export default function Admin() {
   const handleApprove = async (request: PaymentRequest) => {
     try {
       const key = Math.floor(10000 + Math.random() * 90000).toString();
-      
+
       await setDoc(doc(db, 'validKeys', key), {
         used: false,
         generatedForCompany: request.companyName,
-        plan: request.plan
+        companyId: request.companyId,
+        plan: 'monthly'
       });
 
       await updateDoc(doc(db, 'paymentRequests', request.id), {
@@ -91,9 +93,9 @@ export default function Admin() {
     }
   };
 
-  const filteredRequests = React.useMemo(() => requests.filter(r => 
-    r.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.whatsapp.includes(searchTerm) || 
+  const filteredRequests = React.useMemo(() => requests.filter(r =>
+    r.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.whatsapp.includes(searchTerm) ||
     r.txnId.includes(searchTerm)
   ), [requests, searchTerm]);
 
@@ -109,7 +111,6 @@ export default function Admin() {
     }
   };
 
-  console.log('ALL COMPANIES:', companies);
   const filteredCompanies = React.useMemo(() => companies.filter(c =>
     (c.license && c.license.type !== 'free') &&
     (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.email || '').includes(searchTerm))
@@ -128,7 +129,7 @@ export default function Admin() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-500">Manage premium subscriptions and license keys.</p>
+          <p className="text-gray-500">Manage monthly premium subscriptions and license keys.</p>
         </div>
       </div>
 
@@ -137,26 +138,22 @@ export default function Admin() {
           <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setActiveTab('requests')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'requests' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'requests' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Payment Requests
             </button>
             <button
               onClick={() => setActiveTab('licenses')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'licenses' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'licenses' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Active Licenses
             </button>
           </div>
           <div className="relative">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search..." 
+            <input
+              type="text"
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none w-full sm:w-64"
@@ -181,21 +178,11 @@ export default function Admin() {
               <tbody className="divide-y divide-gray-200">
                 {filteredRequests.map((req) => (
                   <tr key={req.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(req.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {req.companyName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {req.whatsapp}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
-                      {req.txnId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                      {req.plan}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(req.createdAt)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{req.companyName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{req.whatsapp}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">{req.txnId}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">Monthly</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {req.status === 'pending' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1"/> Pending</span>}
                       {req.status === 'approved' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle2 className="w-3 h-3 mr-1"/> Approved</span>}
@@ -212,22 +199,16 @@ export default function Admin() {
                         <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-md font-mono font-bold">
                           {req.licenseKey}
                           <button onClick={() => navigator.clipboard.writeText(`Your PFC Financials License Key is: ${req.licenseKey}`)} className="text-blue-500 hover:text-blue-700">
-                             <Copy className="w-4 h-4" />
+                            <Copy className="w-4 h-4" />
                           </button>
                         </div>
                       )}
-                      {req.status === 'rejected' && (
-                         <span className="text-gray-400">-</span>
-                      )}
+                      {req.status === 'rejected' && <span className="text-gray-400">-</span>}
                     </td>
                   </tr>
                 ))}
                 {filteredRequests.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                      No payment requests found.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">No payment requests found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -248,7 +229,6 @@ export default function Admin() {
                 {filteredCompanies.map((company) => {
                   const lic = company.license;
                   if (!lic) return null;
-                  
                   let daysLeft = 0;
                   if (lic.type === 'monthly' && lic.validUntil) {
                     daysLeft = Math.ceil((new Date(lic.validUntil).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
@@ -256,50 +236,28 @@ export default function Admin() {
 
                   return (
                     <tr key={company.id} className={company.isBanned ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {company.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {company.email}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                        {lic.type}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {lic.activatedAt ? formatDate(lic.activatedAt) : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {lic.validUntil ? formatDate(lic.validUntil) : (lic.type === 'permanent' ? 'Never' : '-')}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{company.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{company.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">Monthly</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lic.activatedAt ? formatDate(lic.activatedAt) : '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lic.validUntil ? formatDate(lic.validUntil) : '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {company.isBanned ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Banned
-                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Banned</span>
                         ) : lic.type === 'monthly' ? (
                           daysLeft > 0 ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Active ({daysLeft} days left)
-                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active ({daysLeft} days left)</span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              Expired
-                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Expired</span>
                           )
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Permanent
-                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Free</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => handleToggleBan(company.id, company.isBanned)}
-                          className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                            company.isBanned
-                              ? 'text-green-700 bg-green-100 hover:bg-green-200'
-                              : 'text-red-700 bg-red-100 hover:bg-red-200'
-                          }`}
+                          className={`px-3 py-1 rounded-md font-medium transition-colors ${company.isBanned ? 'text-green-700 bg-green-100 hover:bg-green-200' : 'text-red-700 bg-red-100 hover:bg-red-200'}`}
                         >
                           {company.isBanned ? 'Unban' : 'Ban'}
                         </button>
@@ -308,11 +266,7 @@ export default function Admin() {
                   );
                 })}
                 {filteredCompanies.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                      No active licenses found.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">No active licenses found.</td></tr>
                 )}
               </tbody>
             </table>
