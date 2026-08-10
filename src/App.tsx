@@ -64,18 +64,24 @@ function ErrorFallback({
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    // Show splash only once per browser session.
+    return sessionStorage.getItem('pfc_splash_shown') !== 'true';
+  });
 
-  // Show splash video first
+  const handleSplashComplete = () => {
+    // Mark splash as completed BEFORE navigating to the application.
+    sessionStorage.setItem('pfc_splash_shown', 'true');
+    setShowSplash(false);
+  };
+
   if (showSplash) {
     return (
-      <SplashScreen
-        onComplete={() => setShowSplash(false)}
-      />
+      <SplashScreen onComplete={handleSplashComplete} />
     );
   }
 
-  return (
+return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
       onReset={() => window.location.reload()}
