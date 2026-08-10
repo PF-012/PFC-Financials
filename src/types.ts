@@ -26,7 +26,7 @@ export interface Company {
   isBanned?: boolean;
   banReason?: string;
   license?: {
-    type: 'free' | 'monthly' | 'permanent';
+    type: 'free' | 'monthly';
     validUntil?: string; // ISO string
     key?: string;
     activatedAt?: string;
