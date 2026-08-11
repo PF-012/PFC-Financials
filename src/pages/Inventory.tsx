@@ -1,252 +1,109 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { db, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from '../lib/firebase';
+import { db, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from '../lib/firebase';
 import { InvLocation, InvUnit, InvGroup, InvItem, InvBatch, InvTransaction } from '../types';
-import { Package, MapPin, CalendarDays, Clock, Layers, Scale, History, Plus, Edit, Trash2, TrendingUp, AlertTriangle, FileText, ArrowRightLeft, Info, X } from 'lucide-react';
-import ConfirmModal from '../components/ConfirmModal';
+import { Package, MapPin, CalendarDays, Layers, Scale, TrendingUp, AlertTriangle, Plus, Edit, Trash2, ArrowRightLeft, Info, X } from 'lucide-react';
 
-export default function Inventory() {
-  const { activeCompany } = useAppContext();
-  const { user } = useAuth();
-  
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [showGuide, setShowGuide] = useState(false);
-
-  if (!activeCompany) {
-    return (
-      <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-200 m-6">
-        <Package className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No Company Selected</h3>
-        <p>Please create and select a Company in the <a href="/companies" className="text-blue-600 hover:underline">Companies tab</a> before managing inventory.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-          <Package className="w-6 h-6" /> Inventory Management
-        </h1>
-        <button onClick={() => setShowGuide(true)} className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-full font-medium">
-          <Info className="w-4 h-4" /> How to use
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-6">
-        {[
-          { id: 'units', icon: <Scale className="w-4 h-4" />, label: '(1) Units' },
-          { id: 'locations', icon: <MapPin className="w-4 h-4" />, label: '(1) Locations' },
-          { id: 'groups', icon: <Layers className="w-4 h-4" />, label: '(1) Groups' },
-          { id: 'items', icon: <Package className="w-4 h-4" />, label: '(2) Items' },
-          { id: 'transactions', icon: <ArrowRightLeft className="w-4 h-4" />, label: '(3) Stock Transactions' },
-          { id: 'batches', icon: <CalendarDays className="w-4 h-4" />, label: '(4) Batches & Aging' },
-          { id: 'dashboard', icon: <TrendingUp className="w-4 h-4" />, label: '(5) Dashboard & Reports' },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
-        {activeTab === 'dashboard' && <InventoryDashboard activeCompany={activeCompany} user={user} />}
-        {activeTab === 'transactions' && <InventoryTransactions activeCompany={activeCompany} user={user} />}
-        {activeTab === 'items' && <InventoryItems activeCompany={activeCompany} user={user} />}
-        {activeTab === 'groups' && <InventoryGroups activeCompany={activeCompany} user={user} />}
-        {activeTab === 'units' && <InventoryUnits activeCompany={activeCompany} user={user} />}
-        {activeTab === 'locations' && <InventoryLocations activeCompany={activeCompany} user={user} />}
-        {activeTab === 'batches' && <InventoryBatches activeCompany={activeCompany} user={user} />}
-      </div>
-
-      {showGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2"><Info className="w-5 h-5 text-blue-600"/> Inventory Guide</h3>
-              <button onClick={() => setShowGuide(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
-            </div>
-            <div className="space-y-4 text-sm text-gray-700">
-              <div className="flex gap-3"><div className="bg-blue-100 text-blue-800 font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0">1</div><div><strong>Setup Masters:</strong> Start by creating <em>Units</em> (e.g., Kg, Pcs), <em>Locations/Godowns</em>, and <em>Groups</em> to categorize your stock.</div></div>
-              <div className="flex gap-3"><div className="bg-blue-100 text-blue-800 font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0">2</div><div><strong>Create Items:</strong> Go to the <em>Items</em> tab to add your products. Link them to the units and groups created in step 1. Enable batch tracking if needed.</div></div>
-              <div className="flex gap-3"><div className="bg-blue-100 text-blue-800 font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0">3</div><div><strong>Record Transactions:</strong> Use the <em>Stock Transactions</em> tab to log stock IN (Purchases/Additions), OUT (Sales/Deductions), or TRANSFERs between locations.</div></div>
-              <div className="flex gap-3"><div className="bg-blue-100 text-blue-800 font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0">4</div><div><strong>Monitor & Analyze:</strong> Check the <em>Dashboard & Reports</em> for real-time stock valuation, low stock alerts, and top moving items. Manage expiries in the <em>Batches</em> tab.</div></div>
-            </div>
-            <div className="mt-6 text-right"><button onClick={() => setShowGuide(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded font-medium">Got it</button></div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function useInventoryData(activeCompany: any, collectionName: string) {
-  const [data, setData] = useState<any[]>([]);
+function useInventoryData<T = any>(activeCompany: any, collectionName: string): T[] {
+  const [data, setData] = useState<T[]>([]);
   useEffect(() => {
     if (!activeCompany?.id) return;
     const q = query(collection(db, collectionName), where('companyId', '==', activeCompany.id));
-    return onSnapshot(q, (snap: any) => {
-      setData(snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
-    });
+    return onSnapshot(q, snap => setData(snap.docs.map(d => ({ id: d.id, ...d.data() } as T))));
   }, [activeCompany?.id, collectionName]);
   return data;
 }
 
-function InventoryLocations({ activeCompany }: { activeCompany: any, user: any }) {
-  const locations = useInventoryData(activeCompany, 'inv_locations');
-  const [showModal, setShowModal] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [editingLoc, setEditingLoc] = useState<InvLocation | null>(null);
-  const [formData, setFormData] = useState({ name: '', address: '', isDefault: false });
+const remove = async (collectionName: string, id: string) => {
+  if (window.confirm('Are you sure you want to delete this record?')) await deleteDoc(doc(db, collectionName, id));
+};
 
-  const handleSave = async () => {
-    try {
-      if (editingLoc) await updateDoc(doc(db, 'inv_locations', editingLoc.id), formData);
-      else await addDoc(collection(db, 'inv_locations'), { ...formData, companyId: activeCompany.id });
-      setShowModal(false);
-    } catch (err: any) { console.error('Inventory location save failed:', err); alert('Unable to save location: ' + (err?.message || 'Unknown error')); }
-  };
+export default function Inventory() {
+  const { activeCompany } = useAppContext();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showGuide, setShowGuide] = useState(false);
 
-  const handleDelete = (id: string) => setDeleteConfirm(id);
-  const confirmDelete = async () => { if (deleteConfirm) { try { await deleteDoc(doc(db, 'inv_locations', deleteConfirm)); } catch (err: any) { console.error(err); alert('Error deleting: ' + err.message); } finally { setDeleteConfirm(null); } } };
+  if (!activeCompany) return <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow-sm border m-6"><Package className="w-12 h-12 mx-auto text-gray-400 mb-4"/><h3 className="text-lg font-medium text-gray-900 mb-2">No Company Selected</h3><p>Please create and select a Company before managing inventory.</p></div>;
 
-  return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-medium">Locations / Godowns</h2><button onClick={() => { setEditingLoc(null); setFormData({ name: '', address: '', isDefault: false }); setShowModal(true); }} className="bg-blue-900 text-white px-3 py-1.5 rounded flex items-center gap-1"><Plus className="w-4 h-4"/> Add Location</button></div>
-      <table className="w-full text-left border-collapse"><thead><tr className="bg-gray-50 border-b"><th className="p-2">Name</th><th className="p-2">Address</th><th className="p-2">Actions</th></tr></thead><tbody>{locations.map(loc => (<tr key={loc.id} className="border-b"><td className="p-2">{loc.name} {loc.isDefault && <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded ml-1">Default</span>}</td><td className="p-2">{loc.address}</td><td className="p-2 flex gap-2"><button onClick={() => { setEditingLoc(loc); setFormData({ name: loc.name, address: loc.address || '', isDefault: !!loc.isDefault }); setShowModal(true); }} className="text-blue-600"><Edit className="w-4 h-4"/></button><button onClick={() => handleDelete(loc.id)} className="text-red-600"><Trash2 className="w-4 h-4"/></button></td></tr>))}</tbody></table>
-      {showModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="bg-white rounded-lg p-6 max-w-md w-full"><h3 className="text-lg font-bold mb-4">{editingLoc ? 'Edit' : 'Add'} Location</h3><div className="space-y-3"><div><label className="block text-sm">Name</label><input className="w-full border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div><div><label className="block text-sm">Address</label><input className="w-full border p-2 rounded" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} /></div><div className="flex items-center gap-2"><input type="checkbox" checked={formData.isDefault} onChange={e => setFormData({...formData, isDefault: e.target.checked})} /> <label>Default Location</label></div></div><div className="flex justify-end gap-2 mt-6"><button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-blue-900 text-white rounded">Save</button></div></div></div>}
-      <ConfirmModal isOpen={!!deleteConfirm} title="Delete Location" message="Are you sure you want to delete this location? This action cannot be undone." onConfirm={confirmDelete} onCancel={() => setDeleteConfirm(null)} />
+  const tabs = [
+    { id: 'units', icon: <Scale className="w-4 h-4" />, label: '(1) Units' },
+    { id: 'locations', icon: <MapPin className="w-4 h-4" />, label: '(1) Locations' },
+    { id: 'groups', icon: <Layers className="w-4 h-4" />, label: '(1) Groups' },
+    { id: 'items', icon: <Package className="w-4 h-4" />, label: '(2) Items' },
+    { id: 'transactions', icon: <ArrowRightLeft className="w-4 h-4" />, label: '(3) Stock Transactions' },
+    { id: 'batches', icon: <CalendarDays className="w-4 h-4" />, label: '(4) Batches & Aging' },
+    { id: 'dashboard', icon: <TrendingUp className="w-4 h-4" />, label: '(5) Dashboard & Reports' },
+  ];
+
+  return <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2"><Package className="w-6 h-6"/> Inventory Management</h1>
+      <button onClick={() => setShowGuide(true)} className="text-sm flex items-center gap-1 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full font-medium"><Info className="w-4 h-4"/> How to use</button>
     </div>
-  );
-}
-
-function InventoryUnits({ activeCompany }: { activeCompany: any, user: any }) {
-  const units = useInventoryData(activeCompany, 'inv_units');
-  const [showModal, setShowModal] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<InvUnit | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', symbol: '' });
-
-  const handleSave = async () => {
-    try {
-      if (editingUnit) await updateDoc(doc(db, 'inv_units', editingUnit.id), formData);
-      else await addDoc(collection(db, 'inv_units'), { ...formData, companyId: activeCompany.id });
-      setShowModal(false);
-    } catch (err: any) { console.error('Inventory unit save failed:', err); alert('Unable to save unit: ' + (err?.message || 'Unknown error')); }
-  };
-
-  const handleDelete = (id: string) => setDeleteConfirm(id);
-  const confirmDelete = async () => { if (deleteConfirm) { try { await deleteDoc(doc(db, 'inv_units', deleteConfirm)); } catch (err: any) { console.error(err); alert('Error deleting: ' + err.message); } finally { setDeleteConfirm(null); } } };
-
-  return (
-    <div className="p-4"><div className="flex justify-between items-center mb-4"><h2 className="text-lg font-medium">Units of Measure</h2><button onClick={() => { setEditingUnit(null); setFormData({ name: '', symbol: '' }); setShowModal(true); }} className="bg-blue-900 text-white px-3 py-1.5 rounded flex items-center gap-1"><Plus className="w-4 h-4"/> Add Unit</button></div><table className="w-full text-left border-collapse"><thead><tr className="bg-gray-50 border-b"><th className="p-2">Name</th><th className="p-2">Symbol</th><th className="p-2">Actions</th></tr></thead><tbody>{units.map(u => (<tr key={u.id} className="border-b"><td className="p-2">{u.name}</td><td className="p-2">{u.symbol}</td><td className="p-2 flex gap-2"><button onClick={() => { setEditingUnit(u); setFormData({ name: u.name, symbol: u.symbol }); setShowModal(true); }} className="text-blue-600"><Edit className="w-4 h-4"/></button><button onClick={() => handleDelete(u.id)} className="text-red-600"><Trash2 className="w-4 h-4"/></button></td></tr>))}</tbody></table>{showModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="bg-white rounded-lg p-6 max-w-md w-full"><h3 className="text-lg font-bold mb-4">{editingUnit ? 'Edit' : 'Add'} Unit</h3><div className="space-y-3"><div><label className="block text-sm">Name (e.g. Kilograms)</label><input className="w-full border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div><div><label className="block text-sm">Symbol (e.g. kg)</label><input className="w-full border p-2 rounded" value={formData.symbol} onChange={e => setFormData({...formData, symbol: e.target.value})} /></div></div><div className="flex justify-end gap-2 mt-6"><button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-blue-900 text-white rounded">Save</button></div></div></div>}<ConfirmModal isOpen={!!deleteConfirm} title="Delete Unit" message="Are you sure you want to delete this unit? This action cannot be undone." onConfirm={confirmDelete} onCancel={() => setDeleteConfirm(null)} /></div>
-  );
-}
-
-function InventoryGroups({ activeCompany }: { activeCompany: any, user: any }) {
-  const groups = useInventoryData(activeCompany, 'inv_groups');
-  const [showModal, setShowModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<InvGroup | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', parentId: '' });
-
-  const handleSave = async () => {
-    const name = formData.name.trim();
-    if (!name) {
-      alert('Group name is required.');
-      return;
-    }
-
-    // inv_groups.parentId is a PostgreSQL UUID and is nullable. The empty
-    // string used by the form for "None (Primary)" is NOT a valid UUID.
-    // Convert it to null before sending it to Supabase.
-    const payload = {
-      name,
-      parentId: formData.parentId || null,
-    };
-
-    try {
-      if (editingGroup) {
-        await updateDoc(doc(db, 'inv_groups', editingGroup.id), payload);
-      } else {
-        await addDoc(collection(db, 'inv_groups'), {
-          ...payload,
-          companyId: activeCompany.id,
-        });
-      }
-      setShowModal(false);
-      setEditingGroup(null);
-      setFormData({ name: '', parentId: '' });
-    } catch (err: any) {
-      console.error('Inventory group save failed:', err);
-      alert('Unable to save group: ' + (err?.message || 'Unknown database error'));
-    }
-  };
-
-  const handleDelete = (id: string) => setDeleteConfirm(id);
-  const confirmDelete = async () => {
-    if (deleteConfirm) {
-      try {
-        await deleteDoc(doc(db, 'inv_groups', deleteConfirm));
-      } catch (err: any) {
-        console.error(err);
-        alert('Error deleting: ' + err.message);
-      } finally {
-        setDeleteConfirm(null);
-      }
-    }
-  };
-
-  return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-medium">Stock Groups</h2>
-        <button onClick={() => { setEditingGroup(null); setFormData({ name: '', parentId: '' }); setShowModal(true); }} className="bg-blue-900 text-white px-3 py-1.5 rounded flex items-center gap-1"><Plus className="w-4 h-4"/> Add Group</button>
-      </div>
-      <table className="w-full text-left border-collapse">
-        <thead><tr className="bg-gray-50 border-b"><th className="p-2">Name</th><th className="p-2">Parent Group</th><th className="p-2">Actions</th></tr></thead>
-        <tbody>
-          {groups.map(g => (
-            <tr key={g.id} className="border-b">
-              <td className="p-2">{g.name}</td><td className="p-2">{groups.find(p => p.id === g.parentId)?.name || '-'}</td>
-              <td className="p-2 flex gap-2">
-                <button onClick={() => { setEditingGroup(g); setFormData({ name: g.name, parentId: g.parentId || '' }); setShowModal(true); }} className="text-blue-600"><Edit className="w-4 h-4"/></button>
-                <button onClick={() => handleDelete(g.id)} className="text-red-600"><Trash2 className="w-4 h-4"/></button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">{editingGroup ? 'Edit' : 'Add'} Group</h3>
-            <div className="space-y-3">
-              <div><label className="block text-sm">Name</label><input className="w-full border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
-              <div>
-                <label className="block text-sm">Parent Group</label>
-                <select className="w-full border p-2 rounded" value={formData.parentId} onChange={e => setFormData({...formData, parentId: e.target.value})}>
-                  <option value="">None (Primary)</option>
-                  {groups.filter(g => g.id !== editingGroup?.id).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
-              <button type="button" onClick={handleSave} className="px-4 py-2 bg-blue-900 text-white rounded">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-      <ConfirmModal isOpen={!!deleteConfirm} title="Delete Group" message="Are you sure you want to delete this group? This action cannot be undone." onConfirm={confirmDelete} onCancel={() => setDeleteConfirm(null)} />
+    <div className="flex flex-wrap gap-2 mb-6">{tabs.map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${activeTab === tab.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'}`}>{tab.icon}{tab.label}</button>)}</div>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
+      {activeTab === 'dashboard' && <InventoryDashboard activeCompany={activeCompany} user={user}/>} 
+      {activeTab === 'transactions' && <InventoryTransactions activeCompany={activeCompany} user={user}/>} 
+      {activeTab === 'items' && <InventoryItems activeCompany={activeCompany} user={user}/>} 
+      {activeTab === 'groups' && <InventoryGroups activeCompany={activeCompany} user={user}/>} 
+      {activeTab === 'units' && <InventoryUnits activeCompany={activeCompany} user={user}/>} 
+      {activeTab === 'locations' && <InventoryLocations activeCompany={activeCompany} user={user}/>} 
+      {activeTab === 'batches' && <InventoryBatches activeCompany={activeCompany} user={user}/>} 
     </div>
-  );
+    {showGuide && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="bg-white rounded-lg p-6 max-w-lg w-full"><div className="flex justify-between mb-4"><h3 className="text-lg font-bold">Inventory Guide</h3><button onClick={() => setShowGuide(false)}><X/></button></div><div className="space-y-3 text-sm text-gray-700"><p><b>1. Setup:</b> Create Units, Locations/Godowns and Groups.</p><p><b>2. Items:</b> Create products and link units/groups.</p><p><b>3. Transactions:</b> Record stock IN, OUT, TRANSFER or ADJUSTMENT.</p><p><b>4. Batches:</b> Track manufacturing and expiry dates.</p><p><b>5. Dashboard:</b> Monitor quantities, valuation and low-stock items.</p></div><div className="mt-6 text-right"><button onClick={() => setShowGuide(false)} className="px-4 py-2 bg-gray-100 rounded">Got it</button></div></div></div>}
+  </div>;
 }
+
+function InventoryLocations({ activeCompany }: { activeCompany: any; user: any }) {
+  const locations = useInventoryData<InvLocation>(activeCompany, 'inv_locations');
+  const [open, setOpen] = useState(false); const [editing, setEditing] = useState<InvLocation | null>(null);
+  const [form, setForm] = useState({ name: '', address: '', isDefault: false });
+  const save = async () => { const payload = { ...form, companyId: activeCompany.id }; if (editing) await updateDoc(doc(db, 'inv_locations', editing.id), payload); else await addDoc(collection(db, 'inv_locations'), payload); setOpen(false); setEditing(null); };
+  return <Master title="Locations / Godowns" add="Add Location" onAdd={() => {setEditing(null);setForm({name:'',address:'',isDefault:false});setOpen(true);}}><table className="w-full"><thead><tr className="border-b text-left"><th className="p-2">Name</th><th className="p-2">Address</th><th className="p-2">Actions</th></tr></thead><tbody>{locations.map(x=><tr key={x.id} className="border-b"><td className="p-2">{x.name}</td><td className="p-2">{x.address}</td><td className="p-2 flex gap-2"><button onClick={()=>{setEditing(x);setForm({name:x.name,address:x.address||'',isDefault:!!x.isDefault});setOpen(true)}}><Edit className="w-4 h-4 text-blue-600"/></button><button onClick={()=>remove('inv_locations',x.id)}><Trash2 className="w-4 h-4 text-red-600"/></button></td></tr>)}</tbody></table>{open&&<Modal title={editing?'Edit Location':'Add Location'} onClose={()=>setOpen(false)} onSave={save}><Input label="Name" value={form.name} onChange={v=>setForm({...form,name:v})}/><Input label="Address" value={form.address} onChange={v=>setForm({...form,address:v})}/><label className="flex gap-2"><input type="checkbox" checked={form.isDefault} onChange={e=>setForm({...form,isDefault:e.target.checked})}/> Default Location</label></Modal>}</Master>;
+}
+
+function InventoryUnits({ activeCompany }: { activeCompany: any; user: any }) {
+  const units = useInventoryData<InvUnit>(activeCompany, 'inv_units');
+  const [open,setOpen]=useState(false); const [editing,setEditing]=useState<InvUnit|null>(null); const [form,setForm]=useState({name:'',symbol:''});
+  const save=async()=>{const payload={...form,companyId:activeCompany.id};if(editing)await updateDoc(doc(db,'inv_units',editing.id),payload);else await addDoc(collection(db,'inv_units'),payload);setOpen(false);};
+  return <Master title="Units of Measure" add="Add Unit" onAdd={()=>{setEditing(null);setForm({name:'',symbol:''});setOpen(true)}}><table className="w-full"><thead><tr className="border-b text-left"><th className="p-2">Name</th><th className="p-2">Symbol</th><th className="p-2">Actions</th></tr></thead><tbody>{units.map(x=><tr key={x.id} className="border-b"><td className="p-2">{x.name}</td><td className="p-2">{x.symbol}</td><td className="p-2 flex gap-2"><button onClick={()=>{setEditing(x);setForm({name:x.name,symbol:x.symbol});setOpen(true)}}><Edit className="w-4 h-4 text-blue-600"/></button><button onClick={()=>remove('inv_units',x.id)}><Trash2 className="w-4 h-4 text-red-600"/></button></td></tr>)}</tbody></table>{open&&<Modal title={editing?'Edit Unit':'Add Unit'} onClose={()=>setOpen(false)} onSave={save}><Input label="Name" value={form.name} onChange={v=>setForm({...form,name:v})}/><Input label="Symbol" value={form.symbol} onChange={v=>setForm({...form,symbol:v})}/></Modal>}</Master>;
+}
+
+function InventoryGroups({ activeCompany }: { activeCompany: any; user: any }) {
+  const groups=useInventoryData<InvGroup>(activeCompany,'inv_groups'); const [open,setOpen]=useState(false); const [editing,setEditing]=useState<InvGroup|null>(null); const [form,setForm]=useState({name:'',parentId:''});
+  const save=async()=>{if(!form.name.trim()){alert('Group name is required.');return;} const payload={name:form.name.trim(),parentId:form.parentId||null,companyId:activeCompany.id};if(editing)await updateDoc(doc(db,'inv_groups',editing.id),payload);else await addDoc(collection(db,'inv_groups'),payload);setOpen(false);setEditing(null)};
+  return <Master title="Stock Groups" add="Add Group" onAdd={()=>{setEditing(null);setForm({name:'',parentId:''});setOpen(true)}}><table className="w-full"><thead><tr className="border-b text-left"><th className="p-2">Name</th><th className="p-2">Parent Group</th><th className="p-2">Actions</th></tr></thead><tbody>{groups.map(x=><tr key={x.id} className="border-b"><td className="p-2">{x.name}</td><td className="p-2">{groups.find(g=>g.id===x.parentId)?.name||'-'}</td><td className="p-2 flex gap-2"><button onClick={()=>{setEditing(x);setForm({name:x.name,parentId:x.parentId||''});setOpen(true)}}><Edit className="w-4 h-4 text-blue-600"/></button><button onClick={()=>remove('inv_groups',x.id)}><Trash2 className="w-4 h-4 text-red-600"/></button></td></tr>)}</tbody></table>{open&&<Modal title={editing?'Edit Group':'Add Group'} onClose={()=>setOpen(false)} onSave={save}><Input label="Name" value={form.name} onChange={v=>setForm({...form,name:v})}/><label className="block text-sm">Parent Group<select className="w-full border p-2 rounded mt-1" value={form.parentId} onChange={e=>setForm({...form,parentId:e.target.value})}><option value="">None (Primary)</option>{groups.filter(g=>g.id!==editing?.id).map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label></Modal>}</Master>;
+}
+
+function InventoryItems({ activeCompany }: { activeCompany: any; user: any }) {
+  const items=useInventoryData<InvItem>(activeCompany,'inv_items'); const units=useInventoryData<InvUnit>(activeCompany,'inv_units'); const groups=useInventoryData<InvGroup>(activeCompany,'inv_groups'); const [open,setOpen]=useState(false); const [editing,setEditing]=useState<InvItem|null>(null);
+  const empty={name:'',sku:'',groupId:'',unitId:'',description:'',minStockLevel:0,isBatchTracking:false,purchasePrice:0,salesPrice:0,hsnCode:'',taxRate:0}; const [form,setForm]=useState<any>(empty);
+  const save=async()=>{if(!form.name.trim()||!form.sku.trim()||!form.unitId){alert('Name, SKU and Unit are required.');return;}const payload={...form,name:form.name.trim(),sku:form.sku.trim(),groupId:form.groupId||null,companyId:activeCompany.id,minStockLevel:Number(form.minStockLevel)||0,purchasePrice:Number(form.purchasePrice)||0,salesPrice:Number(form.salesPrice)||0,taxRate:Number(form.taxRate)||0};if(editing)await updateDoc(doc(db,'inv_items',editing.id),payload);else await addDoc(collection(db,'inv_items'),payload);setOpen(false)};
+  return <Master title="Inventory Items" add="Add Item" onAdd={()=>{setEditing(null);setForm(empty);setOpen(true)}}><table className="w-full"><thead><tr className="border-b text-left"><th className="p-2">Item</th><th className="p-2">SKU</th><th className="p-2">Unit</th><th className="p-2">Sale Price</th><th className="p-2">Actions</th></tr></thead><tbody>{items.map(x=><tr key={x.id} className="border-b"><td className="p-2">{x.name}</td><td className="p-2">{x.sku}</td><td className="p-2">{units.find(u=>u.id===x.unitId)?.symbol||'-'}</td><td className="p-2">₹{Number(x.salesPrice||0).toFixed(2)}</td><td className="p-2 flex gap-2"><button onClick={()=>{setEditing(x);setForm({...empty,...x});setOpen(true)}}><Edit className="w-4 h-4 text-blue-600"/></button><button onClick={()=>remove('inv_items',x.id)}><Trash2 className="w-4 h-4 text-red-600"/></button></td></tr>)}</tbody></table>{open&&<Modal title={editing?'Edit Item':'Add Item'} onClose={()=>setOpen(false)} onSave={save}><Input label="Item Name" value={form.name} onChange={v=>setForm({...form,name:v})}/><Input label="SKU" value={form.sku} onChange={v=>setForm({...form,sku:v})}/><label className="block text-sm">Unit<select className="w-full border p-2 rounded mt-1" value={form.unitId} onChange={e=>setForm({...form,unitId:e.target.value})}><option value="">Select Unit</option>{units.map(u=><option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>)}</select></label><label className="block text-sm">Group<select className="w-full border p-2 rounded mt-1" value={form.groupId||''} onChange={e=>setForm({...form,groupId:e.target.value})}><option value="">None</option>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><Input label="Minimum Stock Level" type="number" value={form.minStockLevel} onChange={v=>setForm({...form,minStockLevel:v})}/><Input label="Purchase Price" type="number" value={form.purchasePrice} onChange={v=>setForm({...form,purchasePrice:v})}/><Input label="Sales Price" type="number" value={form.salesPrice} onChange={v=>setForm({...form,salesPrice:v})}/><Input label="HSN Code" value={form.hsnCode||''} onChange={v=>setForm({...form,hsnCode:v})}/><Input label="Tax Rate %" type="number" value={form.taxRate||0} onChange={v=>setForm({...form,taxRate:v})}/><label className="flex gap-2"><input type="checkbox" checked={!!form.isBatchTracking} onChange={e=>setForm({...form,isBatchTracking:e.target.checked})}/> Batch Tracking</label></Modal>}</Master>;
+}
+
+function InventoryBatches({ activeCompany }: { activeCompany: any; user: any }) {
+  const batches=useInventoryData<InvBatch>(activeCompany,'inv_batches'); const items=useInventoryData<InvItem>(activeCompany,'inv_items'); const [open,setOpen]=useState(false); const [form,setForm]=useState({itemId:'',batchNumber:'',manufacturingDate:'',expiryDate:''});
+  const save=async()=>{if(!form.itemId||!form.batchNumber.trim()){alert('Item and batch number are required.');return;}await addDoc(collection(db,'inv_batches'),{...form,companyId:activeCompany.id});setOpen(false)};
+  return <Master title="Batches & Aging" add="Add Batch" onAdd={()=>{setForm({itemId:'',batchNumber:'',manufacturingDate:'',expiryDate:''});setOpen(true)}}><table className="w-full"><thead><tr className="border-b text-left"><th className="p-2">Item</th><th className="p-2">Batch</th><th className="p-2">Manufactured</th><th className="p-2">Expiry</th><th className="p-2">Actions</th></tr></thead><tbody>{batches.map(x=><tr key={x.id} className="border-b"><td className="p-2">{items.find(i=>i.id===x.itemId)?.name||'-'}</td><td className="p-2">{x.batchNumber}</td><td className="p-2">{x.manufacturingDate||'-'}</td><td className="p-2">{x.expiryDate||'-'}</td><td className="p-2"><button onClick={()=>remove('inv_batches',x.id)}><Trash2 className="w-4 h-4 text-red-600"/></button></td></tr>)}</tbody></table>{open&&<Modal title="Add Batch" onClose={()=>setOpen(false)} onSave={save}><label className="block text-sm">Item<select className="w-full border p-2 rounded mt-1" value={form.itemId} onChange={e=>setForm({...form,itemId:e.target.value})}><option value="">Select Item</option>{items.map(i=><option key={i.id} value={i.id}>{i.name}</option>)}</select></label><Input label="Batch Number" value={form.batchNumber} onChange={v=>setForm({...form,batchNumber:v})}/><Input label="Manufacturing Date" type="date" value={form.manufacturingDate} onChange={v=>setForm({...form,manufacturingDate:v})}/><Input label="Expiry Date" type="date" value={form.expiryDate} onChange={v=>setForm({...form,expiryDate:v})}/></Modal>}</Master>;
+}
+
+function InventoryTransactions({ activeCompany }: { activeCompany: any; user: any }) {
+  const tx=useInventoryData<InvTransaction>(activeCompany,'inv_transactions'); const items=useInventoryData<InvItem>(activeCompany,'inv_items'); const locations=useInventoryData<InvLocation>(activeCompany,'inv_locations'); const batches=useInventoryData<InvBatch>(activeCompany,'inv_batches'); const [open,setOpen]=useState(false);
+  const empty={type:'IN',itemId:'',batchId:'',locationId:'',toLocationId:'',quantity:1,rate:0,date:new Date().toISOString().slice(0,10),reference:''}; const [form,setForm]=useState<any>(empty);
+  const save=async()=>{if(!form.itemId||!form.locationId||Number(form.quantity)<=0){alert('Item, location and positive quantity are required.');return;}const payload={...form,companyId:activeCompany.id,quantity:Number(form.quantity),rate:Number(form.rate)||0,amount:(Number(form.quantity)||0)*(Number(form.rate)||0),batchId:form.batchId||null,toLocationId:form.toLocationId||null};await addDoc(collection(db,'inv_transactions'),payload);setOpen(false)};
+  return <Master title="Stock Transactions" add="Add Transaction" onAdd={()=>{setForm(empty);setOpen(true)}}><table className="w-full"><thead><tr className="border-b text-left"><th className="p-2">Date</th><th className="p-2">Type</th><th className="p-2">Item</th><th className="p-2">Qty</th><th className="p-2">Amount</th><th className="p-2">Actions</th></tr></thead><tbody>{tx.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=><tr key={x.id} className="border-b"><td className="p-2">{x.date}</td><td className="p-2">{x.type}</td><td className="p-2">{items.find(i=>i.id===x.itemId)?.name||'-'}</td><td className="p-2">{x.quantity}</td><td className="p-2">₹{Number(x.amount||0).toFixed(2)}</td><td className="p-2"><button onClick={()=>remove('inv_transactions',x.id)}><Trash2 className="w-4 h-4 text-red-600"/></button></td></tr>)}</tbody></table>{open&&<Modal title="Add Stock Transaction" onClose={()=>setOpen(false)} onSave={save}><label className="block text-sm">Type<select className="w-full border p-2 rounded mt-1" value={form.type} onChange={e=>setForm({...form,type:e.target.value})}><option>IN</option><option>OUT</option><option>TRANSFER</option><option>ADJUSTMENT</option></select></label><label className="block text-sm">Item<select className="w-full border p-2 rounded mt-1" value={form.itemId} onChange={e=>setForm({...form,itemId:e.target.value})}><option value="">Select Item</option>{items.map(i=><option key={i.id} value={i.id}>{i.name}</option>)}</select></label><label className="block text-sm">Location<select className="w-full border p-2 rounded mt-1" value={form.locationId} onChange={e=>setForm({...form,locationId:e.target.value})}><option value="">Select Location</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>{form.type==='TRANSFER'&&<label className="block text-sm">To Location<select className="w-full border p-2 rounded mt-1" value={form.toLocationId} onChange={e=>setForm({...form,toLocationId:e.target.value})}><option value="">Select Destination</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>}<label className="block text-sm">Batch<select className="w-full border p-2 rounded mt-1" value={form.batchId} onChange={e=>setForm({...form,batchId:e.target.value})}><option value="">None</option>{batches.filter(b=>!form.itemId||b.itemId===form.itemId).map(b=><option key={b.id} value={b.id}>{b.batchNumber}</option>)}</select></label><Input label="Quantity" type="number" value={form.quantity} onChange={v=>setForm({...form,quantity:v})}/><Input label="Rate" type="number" value={form.rate} onChange={v=>setForm({...form,rate:v})}/><Input label="Date" type="date" value={form.date} onChange={v=>setForm({...form,date:v})}/><Input label="Reference" value={form.reference} onChange={v=>setForm({...form,reference:v})}/></Modal>}</Master>;
+}
+
+function InventoryDashboard({ activeCompany }: { activeCompany: any; user: any }) {
+  const items=useInventoryData<InvItem>(activeCompany,'inv_items'); const tx=useInventoryData<InvTransaction>(activeCompany,'inv_transactions');
+  const stats=useMemo(()=>{const stock=new Map<string,number>();tx.forEach(t=>{const q=Number(t.quantity)||0;const sign=t.type==='IN'?1:t.type==='OUT'?-1:t.type==='ADJUSTMENT'?1:0;stock.set(t.itemId,(stock.get(t.itemId)||0)+sign*q);if(t.type==='TRANSFER')stock.set(t.itemId,(stock.get(t.itemId)||0));});let qty=0,value=0,low=0;items.forEach(i=>{const q=stock.get(i.id)||0;qty+=q;value+=q*(Number(i.purchasePrice)||0);if(q<=Number(i.minStockLevel||0))low++;});return {qty,value,low,items:items.length,transactions:tx.length}},[items,tx]);
+  return <div className="p-6"><h2 className="text-lg font-semibold mb-5">Inventory Dashboard</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-4"><Stat label="Items" value={stats.items}/><Stat label="Stock Quantity" value={stats.qty}/><Stat label="Stock Value" value={`₹${stats.value.toFixed(2)}`}/><Stat label="Low Stock Items" value={stats.low} danger/></div><div className="mt-8 grid md:grid-cols-2 gap-4"><div className="border rounded-lg p-5"><h3 className="font-semibold mb-2">Transactions</h3><p className="text-3xl font-bold">{stats.transactions}</p><p className="text-sm text-gray-500">Total stock transactions recorded</p></div><div className="border rounded-lg p-5"><h3 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="w-5 h-5"/> Low Stock</h3><p className="text-sm text-gray-600">{stats.low ? `${stats.low} item(s) are at or below their minimum stock level.` : 'No items are currently below their minimum stock level.'}</p></div></div></div>;
+}
+
+function Master({ title, add, onAdd, children }: { title:string; add:string; onAdd:()=>void; children:React.ReactNode }) { return <div className="p-4"><div className="flex justify-between items-center mb-4"><h2 className="text-lg font-medium">{title}</h2><button onClick={onAdd} className="bg-blue-900 text-white px-3 py-1.5 rounded flex items-center gap-1"><Plus className="w-4 h-4"/>{add}</button></div>{children}</div>; }
+function Input({ label, value, onChange, type='text' }: { label:string; value:any; onChange:(v:string)=>void; type?:string }) { return <label className="block text-sm">{label}<input type={type} className="w-full border p-2 rounded mt-1" value={value ?? ''} onChange={e=>onChange(e.target.value)}/></label>; }
+function Modal({ title, onClose, onSave, children }: { title:string; onClose:()=>void; onSave:()=>void; children:React.ReactNode }) { return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"><div className="flex justify-between items-center mb-4"><h3 className="text-lg font-bold">{title}</h3><button onClick={onClose}><X/></button></div><div className="space-y-3">{children}</div><div className="flex justify-end gap-2 mt-6"><button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button><button type="button" onClick={onSave} className="px-4 py-2 bg-blue-900 text-white rounded">Save</button></div></div></div>; }
+function Stat({ label, value, danger=false }: { label:string; value:React.ReactNode; danger?:boolean }) { return <div className="border rounded-lg p-4"><p className="text-sm text-gray-500">{label}</p><p className={`text-2xl font-semibold mt-1 ${danger ? 'text-red-600' : 'text-gray-900'}`}>{value}</p></div>; }
