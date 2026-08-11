@@ -22,7 +22,9 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [activeCompany, setActiveCompany] = useState<Company | null>({ id: 'a128e131-095e-4894-9e05-02f23acc8ae0', name: 'Test Company', userId: 'test-user-id', isBanned: false });
+  // Do not inject a fake/test company into production. The active company is
+  // selected from the authenticated user's real company records below.
+  const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(false);
   const [financialYear, setFinancialYear] = useState<FinancialYear>(getFinancialYearDates());
   const availableYears = generateAvailableYears();
@@ -33,49 +35,67 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user) {
       setCompanies([]);
       setActiveCompany(null);
+      setLedgers([]);
+      setVouchers([]);
       setLoading(false);
       return;
     }
-    
+
+    setLoading(true);
+
     const q = query(collection(db, 'companies'), where('userId', '==', user.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const comps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
       setCompanies(comps);
-      
+
       setActiveCompany(prevActive => {
         if (comps.length > 0 && !prevActive) {
           return comps[0];
-        } else if (comps.length === 0) {
+        }
+        if (comps.length === 0) {
           return null;
-        } else if (prevActive) {
+        }
+        if (prevActive) {
           const updatedActive = comps.find(c => c.id === prevActive.id);
-          if (updatedActive) {
-            return updatedActive;
-          } else {
-            return comps[0] || null;
-          }
+          return updatedActive ?? comps[0] ?? null;
         }
         return prevActive;
       });
-      
+
       setLoading(false);
     });
 
     const lq = query(collection(db, 'ledgers'), where('userId', '==', user.id));
     const unsubL = onSnapshot(lq, (snap) => {
-       setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)));
+      setLedgers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ledger)));
     });
 
     const vq = query(collection(db, 'vouchers'), where('userId', '==', user.id));
     const unsubV = onSnapshot(vq, (snap) => {
-       setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)));
+      setVouchers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Voucher)));
     });
 
-    return () => { unsubscribe(); unsubL(); unsubV(); };
+    return () => {
+      unsubscribe();
+      unsubL();
+      unsubV();
+    };
   }, [user]);
 
   return (
-    <AppContext.Provider value={{ companies, activeCompany, setActiveCompany, loading, financialYear, setFinancialYear, availableYears, ledgers, vouchers }}>
+    <AppContext.Provider
+      value={{
+        companies,
+        activeCompany,
+        setActiveCompany,
+        loading,
+        financialYear,
+        setFinancialYear,
+        availableYears,
+        ledgers,
+        vouchers,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
