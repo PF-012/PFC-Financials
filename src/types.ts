@@ -161,3 +161,66 @@ export interface SalarySlip {
     monthlyTds: number;
   };
 }
+
+export interface InvLocation {
+  id: string;
+  companyId: string;
+  name: string;
+  address?: string;
+  isDefault?: boolean;
+}
+
+export interface InvUnit {
+  id: string;
+  companyId: string;
+  name: string;
+  symbol: string;
+}
+
+export interface InvGroup {
+  id: string;
+  companyId: string;
+  name: string;
+  parentId?: string;
+}
+
+export interface InvItem {
+  id: string;
+  companyId: string;
+  name: string;
+  sku: string;
+  groupId?: string;
+  unitId: string;
+  description?: string;
+  minStockLevel: number;
+  isBatchTracking: boolean;
+  purchasePrice: number;
+  salesPrice: number;
+  hsnCode?: string;
+  taxRate?: number;
+}
+
+export interface InvBatch {
+  id: string;
+  companyId: string;
+  itemId: string;
+  batchNumber: string;
+  manufacturingDate?: string;
+  expiryDate?: string;
+}
+
+export interface InvTransaction {
+  id: string;
+  companyId: string;
+  type: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT';
+  itemId: string;
+  batchId?: string;
+  locationId: string; // From location for OUT/TRANSFER, To location for IN
+  toLocationId?: string; // Only for TRANSFER
+  quantity: number;
+  rate: number;
+  amount: number;
+  date: string;
+  reference?: string;
+  voucherId?: string;
+}
