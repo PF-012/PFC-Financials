@@ -37,21 +37,11 @@ function ErrorFallback({
           <AlertTriangle className="h-8 w-8 text-red-600" />
         </div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Software Protected</h2>
-        <p className="text-gray-600 mb-6 text-sm">
-          A potential bug was caught and prevented from crashing the system.
-        </p>
-        <div className="font-mono bg-gray-100 p-2 rounded text-xs text-red-800 break-all mb-4">
-          {error.message}
-        </div>
-        <pre className="text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40 mb-6">
-          {error.stack}
-        </pre>
-        <button
-          onClick={resetErrorBoundary}
-          className="inline-flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
-        >
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          Reload Application
+        <p className="text-gray-600 mb-6 text-sm">A potential bug was caught and prevented from crashing the system.</p>
+        <div className="font-mono bg-gray-100 p-2 rounded text-xs text-red-800 break-all mb-4">{error.message}</div>
+        <pre className="text-left text-xs bg-gray-200 p-2 overflow-auto max-h-40 mb-6">{error.stack}</pre>
+        <button onClick={resetErrorBoundary} className="inline-flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800">
+          <RefreshCcw className="h-4 w-4 mr-2" /> Reload Application
         </button>
       </div>
     </div>
@@ -62,9 +52,9 @@ function AppContent() {
   const { user } = useAuth();
   const [showSplash, setShowSplash] = useState(() => {
     try {
-      return !user && localStorage.getItem('pfc_splash_shown') !== 'true';
+      return localStorage.getItem('pfc_splash_shown') !== 'true';
     } catch {
-      return !user;
+      return true;
     }
   });
 
@@ -72,16 +62,13 @@ function AppContent() {
     try {
       localStorage.setItem('pfc_splash_shown', 'true');
     } catch {
-      // Ignore storage errors; the current app session will still continue.
+      // Continue normally if browser storage is unavailable.
     }
     setShowSplash(false);
   };
 
-  // If authentication already exists (including after an OAuth redirect),
-  // never show the splash again.
-  if (user) {
-    return <Application />;
-  }
+  // Once the user is authenticated, never display the splash again.
+  if (user) return <Application />;
 
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
@@ -128,10 +115,7 @@ function Application() {
 
 function App() {
   return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => window.location.reload()}
-    >
+    <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
       <AuthProvider>
         <AppContent />
       </AuthProvider>
