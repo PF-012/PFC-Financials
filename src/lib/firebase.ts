@@ -81,9 +81,10 @@ export async function getDoc(docObj: any) {
  * Insert a row while automatically attaching the currently authenticated
  * Supabase user when the caller has not supplied userId.
  *
- * This is important for private payroll data: the frontend must never create
- * an employee without an owner, otherwise an RLS policy based on auth.uid()
- * cannot protect the row correctly.
+ * The insert intentionally does not request the inserted row back with
+ * .select(). This keeps INSERT independent from SELECT/RLS policies and is
+ * safer for private tables where a row may be writable but not immediately
+ * readable through the same PostgREST request.
  */
 export async function addDoc(coll: any, data: any) {
   const payload = { ...data };
@@ -97,10 +98,13 @@ export async function addDoc(coll: any, data: any) {
     payload.userId = authData.user.id;
   }
 
-  const { data: res, error } = await supabase.from(coll.path).insert(payload).select().single();
+  const generatedId = payload.id || crypto.randomUUID();
+  payload.id = generatedId;
+
+  const { error } = await supabase.from(coll.path).insert(payload);
   if (error) throw error;
   eventTarget.dispatchEvent(new Event('mutation'));
-  return { id: res.id, type: 'doc', path: coll.path };
+  return { id: generatedId, type: 'doc', path: coll.path };
 }
 
 export async function setDoc(docObj: any, data: any, options?: { merge?: boolean }) {
