@@ -1,3 +1,17 @@
+export type VoucherType =
+  | 'Sales'
+  | 'Purchase'
+  | 'Receipt'
+  | 'Payment'
+  | 'Journal'
+  | 'Contra'
+  | 'Credit Note'
+  | 'Debit Note'
+  | 'Sales Order'
+  | 'Purchase Order';
+
+export type LicenseType = 'free' | 'monthly';
+
 export interface CompanySettings {
   voucherNumbering: 'auto' | 'manual';
   enableGst: boolean;
@@ -6,6 +20,13 @@ export interface CompanySettings {
   enableCreditNote?: boolean;
   enableSalesOrder?: boolean;
   enablePurchaseOrder?: boolean;
+}
+
+export interface CompanyLicense {
+  type: LicenseType;
+  validUntil?: string;
+  key?: string;
+  activatedAt?: string;
 }
 
 export interface Company {
@@ -25,12 +46,7 @@ export interface Company {
   settings?: CompanySettings;
   isBanned?: boolean;
   banReason?: string;
-  license?: {
-    type: 'free' | 'monthly';
-    validUntil?: string; // ISO string
-    key?: string;
-    activatedAt?: string;
-  };
+  license?: CompanyLicense;
 }
 
 export interface Ledger {
@@ -55,7 +71,7 @@ export interface Ledger {
 export interface Voucher {
   id: string;
   companyId: string;
-  type: 'Sales' | 'Purchase' | 'Receipt' | 'Payment' | 'Journal' | 'Contra' | 'Credit Note' | 'Debit Note' | 'Sales Order' | 'Purchase Order';
+  type: VoucherType;
   date: string;
   number: string;
   partyId: string;
@@ -73,7 +89,7 @@ export interface Voucher {
   narration?: string;
   itemName?: string;
   paymentMode?: string;
-  items?: any[];
+  items?: VoucherItem[];
 }
 
 export interface VoucherItem {
@@ -95,9 +111,6 @@ export interface BankTransaction {
   instrumentNumber?: string;
 }
 
-
-
-
 export interface Employee {
   id: string;
   companyId: string;
@@ -107,14 +120,14 @@ export interface Employee {
   department: string;
   dateOfJoining: string;
   pan: string;
-  uan?: string; // For PF
+  uan?: string;
   pfNumber?: string;
   esiNumber?: string;
   bankName?: string;
   accountNumber?: string;
   ifscCode?: string;
-  basicSalary: number; // Monthly basic
-  hra: number; // Monthly HRA
+  basicSalary: number;
+  hra: number;
   conveyanceAllowance: number;
   medicalAllowance: number;
   specialAllowance: number;
@@ -122,45 +135,51 @@ export interface Employee {
   deductPT?: boolean;
 }
 
+export interface TaxBreakdown {
+  annualGross: number;
+  standardDeduction: number;
+  taxableIncome: number;
+  taxSlabs: Array<{
+    slab: string;
+    rate: string;
+    amount: number;
+  }>;
+  totalAnnualTax: number;
+  monthlyTds: number;
+}
+
 export interface SalarySlip {
   id: string;
   companyId: string;
   employeeId: string;
-  month: number; // 1-12
+  month: number;
   year: number;
-  
-  // Earnings
+
   basic: number;
   hra: number;
   conveyance: number;
   medical: number;
   special: number;
   grossEarnings: number;
-  
-  // Deductions
-  pf: number; // Provident Fund (Employee contribution)
-  esi: number; // Employee State Insurance (Employee contribution)
-  pt: number; // Professional Tax
-  tds: number; // Tax Deducted at Source
+
+  pf: number;
+  esi: number;
+  pt: number;
+  tds: number;
   otherDeductions: number;
   totalDeductions: number;
-  
-  // Net
+
   netSalary: number;
-  
-  // Additional info
+
   workingDays: number;
   presentDays: number;
   leaves: number;
-  taxBreakdown?: {
-    annualGross: number;
-    standardDeduction: number;
-    taxableIncome: number;
-    taxSlabs: { slab: string, rate: string, amount: number }[];
-    totalAnnualTax: number;
-    monthlyTds: number;
-  };
+  taxBreakdown?: TaxBreakdown;
 }
+
+/* =========================
+   Inventory Management
+   ========================= */
 
 export interface InvLocation {
   id: string;
@@ -181,7 +200,8 @@ export interface InvGroup {
   id: string;
   companyId: string;
   name: string;
-  parentId?: string;
+  /** Null/undefined means this is a primary (top-level) group. */
+  parentId?: string | null;
 }
 
 export interface InvItem {
@@ -189,7 +209,7 @@ export interface InvItem {
   companyId: string;
   name: string;
   sku: string;
-  groupId?: string;
+  groupId?: string | null;
   unitId: string;
   description?: string;
   minStockLevel: number;
@@ -209,18 +229,26 @@ export interface InvBatch {
   expiryDate?: string;
 }
 
+export type InvTransactionType =
+  | 'IN'
+  | 'OUT'
+  | 'TRANSFER'
+  | 'ADJUSTMENT';
+
 export interface InvTransaction {
   id: string;
   companyId: string;
-  type: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT';
+  type: InvTransactionType;
   itemId: string;
-  batchId?: string;
-  locationId: string; // From location for OUT/TRANSFER, To location for IN
-  toLocationId?: string; // Only for TRANSFER
+  batchId?: string | null;
+  /** Source location for OUT/TRANSFER; location receiving stock for IN. */
+  locationId: string;
+  /** Destination location used only by TRANSFER transactions. */
+  toLocationId?: string | null;
   quantity: number;
   rate: number;
   amount: number;
   date: string;
   reference?: string;
-  voucherId?: string;
+  voucherId?: string | null;
 }
