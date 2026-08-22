@@ -15,6 +15,7 @@ export default function Layout() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,7 +68,14 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex shrink-0">
+      {/* Sidebar */}
+       {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+     <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center px-6 border-b border-blue-800 bg-blue-900">
           <div className="flex items-center gap-3 text-white"><span className="text-xl font-semibold tracking-wide">PFC Financials</span></div>
         </div>
@@ -75,7 +83,7 @@ export default function Layout() {
           {navItems.map((item) => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
-              <Link key={item.to} to={item.to} className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${active ? 'bg-blue-50 text-blue-900 font-medium' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+               <Link key={item.to} to={item.to} onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
                 {item.icon}<span>{item.label}</span>
               </Link>
             );
@@ -87,11 +95,12 @@ export default function Layout() {
           </button>
         </div>
       </aside>
-
+ {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-blue-900 border-b border-blue-800 flex items-center justify-between px-4 sm:px-6 shrink-0">
           <div className="flex items-center gap-4">
-            <button className="md:hidden text-blue-200 hover:text-white"><Menu className="w-6 h-6" /></button>
+            <button className="md:hidden text-blue-200 hover:text-white" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="w-6 h-6" /></button>
             {activeCompany ? (
               <div><span className="text-xs text-blue-200 font-medium">Active Company</span><h2 className="text-sm font-semibold text-white">{activeCompany.name}</h2></div>
             ) : <span className="text-sm text-yellow-300 font-medium">No company selected</span>}
