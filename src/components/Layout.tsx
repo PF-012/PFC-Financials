@@ -59,6 +59,7 @@ export default function Layout() {
 
   if (user.email === 'mndl.yuvi@gmail.com') {
     navItems.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'Admin', to: '/admin' });
+    navItems.push({ icon: <Search className="w-5 h-5" />, label: 'Audit Trail', to: '/audit-trail' });
   }
 
   const isPremiumActive = Boolean(
