@@ -19,6 +19,7 @@ export default function Settings() {
     enableCreditNote: false,
     enableSalesOrder: false,
     enablePurchaseOrder: false
+    sector: 'General'
   });
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function Settings() {
         enableCreditNote: false,
         enableSalesOrder: false,
         enablePurchaseOrder: false
+        sector: 'General'
       });
     }
   }, [activeCompany]);
@@ -85,6 +87,32 @@ export default function Settings() {
                  </label>
               </div>
               <p className="mt-1 text-xs text-gray-500">If set to manual, you can enter the voucher number yourself when creating a voucher.</p>
+           </div>
+
+          <div className="border-t border-gray-100 pt-6">
+              <label className="block text-sm font-medium text-gray-900 mb-2">Company Sector</label>
+              <select 
+                value={settings.sector || 'General'}
+                onChange={e => setSettings({...settings, sector: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="General">General</option>
+                <option value="Technology">Technology</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Financial Services">Financial Services</option>
+                <option value="Retail">Retail</option>
+                <option value="Manufacturing">Manufacturing</option>
+                <option value="Real Estate">Real Estate</option>
+                <option value="FMCG">FMCG</option>
+                <option value="Hospitality">Hospitality</option>
+                <option value="Service Based">Service Based</option>
+                <option value="Construction">Construction</option>
+                <option value="Logistics">Logistics</option>
+                <option value="Energy">Energy</option>
+                <option value="Agriculture">Agriculture</option>
+                <option value="Other">Other</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Selecting a specific sector enables tailored AI-powered insights, auditing logic, and custom financial models in the CFO Dashboard.</p>
            </div>
            
            <div className="border-t border-gray-100 pt-6">
