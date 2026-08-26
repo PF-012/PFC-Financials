@@ -252,3 +252,18 @@ export interface InvTransaction {
   reference?: string;
   voucherId?: string | null;
 }
+export interface AuditLog {
+  id: string;
+  companyId: string;
+  entityId: string;
+  entityType: string; // 'Voucher', 'Ledger', etc.
+  changes: {
+    field: string;
+    oldValue: any;
+    newValue: any;
+  }[];
+  timestamp: string;
+  userId: string;
+  userEmail: string;
+}
+
