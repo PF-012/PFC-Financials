@@ -20,6 +20,7 @@ export interface CompanySettings {
   enableCreditNote?: boolean;
   enableSalesOrder?: boolean;
   enablePurchaseOrder?: boolean;
+  sector?: string;
 }
 
 export interface CompanyLicense {
