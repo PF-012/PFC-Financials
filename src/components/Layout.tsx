@@ -53,6 +53,7 @@ export default function Layout() {
     { icon: <Package className="w-5 h-5" />, label: 'Inventory', to: '/inventory' },
     { icon: <Database className="w-5 h-5" />, label: 'Data & Sync', to: '/data' },
     { icon: <Building className="w-5 h-5" />, label: 'Companies', to: '/companies' },
+    { icon: <Target className="w-5 h-5" />, label: 'CFO Models', to: '/cfo-dashboard' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', to: '/settings' },
   ];
 
@@ -86,6 +87,10 @@ export default function Layout() {
           {navItems.map((item) => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
+              <React.Fragment key={item.to}>
+                     {item.label === 'CFO Models' && (
+                        <div className="my-4 border-t border-gray-200"></div>
+                     )}
               <Link
                 key={item.to}
                 to={item.to}
