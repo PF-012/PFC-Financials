@@ -21,6 +21,8 @@ const Payroll = React.lazy(() => import('./pages/Payroll'));
 const Inventory = React.lazy(() => import('./pages/Inventory'));
 const GoldenRules = React.lazy(() => import('./pages/GoldenRules'));
 const Admin = React.lazy(() => import('./pages/Admin'));
+const AuditTrail = React.lazy(() => import('./pages/AuditTrail'));
+const CFODashboard = React.lazy(() => import('./pages/CFODashboard'));
 const AccountingGuide = React.lazy(() => import('./pages/AccountingGuide'));
 
 function ErrorFallback({
@@ -103,6 +105,8 @@ function Application() {
               <Route path="inventory" element={<Inventory />} />
               <Route path="settings" element={<Settings />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="audit-trail" element={<AuditTrail />} />
+              <Route path="cfo-dashboard" element={<CFODashboard />} />
               <Route path="accounting-guide" element={<AccountingGuide />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
