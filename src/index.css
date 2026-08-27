@@ -9,19 +9,16 @@ body {
 }
 
 @media print {
-  aside, header {
-    display: none !important;
-  }
+  aside, header { display: none !important; }
   main {
     padding: 0 !important;
     margin: 0 !important;
     height: auto !important;
     overflow: visible !important;
   }
-  .no-print {
-    display: none !important;
-  }
+  .no-print { display: none !important; }
 }
+
 @media (max-width: 768px) {
   table {
     display: block;
