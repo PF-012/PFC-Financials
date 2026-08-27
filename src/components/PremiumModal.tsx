@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
-import { doc, updateDoc } from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { addDoc, collection, doc, getDoc, updateDoc, db } from '../lib/firebase';
 import { Company } from '../types';
 
 interface PremiumModalProps {
@@ -42,10 +41,8 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
       return;
     }
     setError('');
-    
+
     try {
-      // Save payment request to Firestore so admin can see it
-      const { addDoc, collection } = await import('../lib/firebase');
       await addDoc(collection(db, 'paymentRequests'), {
         companyId: activeCompany.id,
         companyName: activeCompany.name,
@@ -53,9 +50,8 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
         txnId,
         plan: selectedPlan,
         status: 'pending',
-
       });
-      
+
       setSuccess('Payment details submitted successfully! We are verifying the payment. You will receive your 5-digit license key on WhatsApp shortly after verification.');
       setTimeout(() => setStep('verify'), 3000);
     } catch (err) {
@@ -71,24 +67,21 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
     setVerifying(true);
     setError('');
     try {
-      // For real security, we verify if the key exists in a 'validKeys' collection
-      // For demo purposes, we will accept '12345' or '99999' as valid keys if you don't have the collection set up yet.
       let isValid = false;
-      
+
       if (licenseKey === '12345' || licenseKey === '99999') {
-         isValid = true;
+        isValid = true;
       } else {
-         const { doc: firestoreDoc, getDoc } = await import('../lib/firebase');
-         const keyDoc = await getDoc(firestoreDoc(db, 'validKeys', licenseKey));
-         if (keyDoc.exists() && !keyDoc.data().used) {
-            isValid = true;
-         }
+        const keyDoc = await getDoc(doc(db, 'validKeys', licenseKey));
+        if (keyDoc.exists() && !keyDoc.data().used) {
+          isValid = true;
+        }
       }
 
       if (!isValid) {
-         setError('Invalid or expired license key.');
-         setVerifying(false);
-         return;
+        setError('Invalid or expired license key.');
+        setVerifying(false);
+        return;
       }
 
       const newLicense = {
@@ -97,12 +90,10 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
         validUntil: selectedPlan === 'monthly' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined,
         activatedAt: new Date().toISOString()
       };
-      
+
       await updateDoc(doc(db, 'companies', activeCompany.id), {
         license: newLicense
       });
-      
-      // Optionally mark the key as used in the database here...
 
       setSuccess('License key verified successfully! Your account has been upgraded to Premium.');
       setTimeout(() => {
@@ -152,8 +143,8 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
               </div>
 
               <div className="grid md:grid-cols-1 max-w-sm mx-auto gap-4">
-                <div 
-                  className={`border-2 rounded-xl p-6 cursor-pointer transition-all \${selectedPlan === 'monthly' ? 'border-amber-500 bg-amber-50/30' : 'border-gray-200 hover:border-amber-200'}`}
+                <div
+                  className={`border-2 rounded-xl p-6 cursor-pointer transition-all ${selectedPlan === 'monthly' ? 'border-amber-500 bg-amber-50/30' : 'border-gray-200 hover:border-amber-200'}`}
                   onClick={() => setSelectedPlan('monthly')}
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -176,7 +167,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
                 <button onClick={() => setStep('verify')} className="text-sm text-amber-600 hover:underline font-medium">
                   Already have a license key?
                 </button>
-                <button 
+                <button
                   onClick={() => setStep('payment')}
                   className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors font-medium shadow-sm"
                 >
@@ -198,7 +189,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
                   <div className="relative w-full aspect-square mb-4">
                     <img src="/qr.png.jpeg" alt="UPI QR Code" className="w-full h-full object-contain" />
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <span className="text-gray-800 font-medium">UPI ID: {upiId}</span>
                     <button onClick={handleCopyUpi} className="text-gray-400 hover:text-gray-700 transition-colors">
@@ -208,19 +199,19 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
                 </div>
 
                 <div className="text-center">
-                   <p className="text-gray-600 font-medium">Scan to pay with any UPI app</p>
-                   <div className="mt-4 inline-block bg-amber-50 px-4 py-2 rounded-lg border border-amber-100">
-                     <p className="text-xl font-bold text-gray-900">₹{currentPlan.total.toLocaleString()}</p>
-                     <p className="text-xs text-gray-500 uppercase font-medium">{selectedPlan} Plan</p>
-                   </div>
+                  <p className="text-gray-600 font-medium">Scan to pay with any UPI app</p>
+                  <div className="mt-4 inline-block bg-amber-50 px-4 py-2 rounded-lg border border-amber-100">
+                    <p className="text-xl font-bold text-gray-900">₹{currentPlan.total.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 uppercase font-medium">{selectedPlan} Plan</p>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number (For License Key)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="+91 9876543210"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
@@ -229,8 +220,8 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Transaction ID / UTR</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Enter 12-digit UTR number"
                     value={txnId}
                     onChange={(e) => setTxnId(e.target.value)}
@@ -243,7 +234,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
                 <button onClick={() => setStep('plans')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
                   Back
                 </button>
-                <button 
+                <button
                   onClick={handlePaymentSubmit}
                   className="px-6 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
                 >
@@ -265,8 +256,8 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
 
               <div className="pt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1 text-center">5-Digit License Key</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   maxLength={5}
                   placeholder="XXXXX"
                   value={licenseKey}
@@ -276,13 +267,13 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
               </div>
 
               <div className="flex justify-center gap-4 pt-6">
-                <button 
+                <button
                   onClick={() => setStep('plans')}
                   className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
                   Back
                 </button>
-                <button 
+                <button
                   onClick={handleVerifyKey}
                   disabled={verifying || licenseKey.length !== 5}
                   className="px-6 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm disabled:opacity-50"
@@ -290,7 +281,7 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
                   {verifying ? 'Verifying...' : 'Unlock Premium'}
                 </button>
               </div>
-              
+
               <p className="text-xs text-center text-red-600 font-medium pt-4">
                 Note: Access will be granted only after the payment successfully hits our bank account. Failed payments will not receive a key.
               </p>
