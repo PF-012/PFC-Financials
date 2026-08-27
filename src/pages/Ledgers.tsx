@@ -162,7 +162,21 @@ export default function Ledgers() {
 
   const handleEdit = (l: Ledger) => {
     if (l.isSystem) return;
-    setForm(l);
+    setForm({
+      name: l.name || '',
+      group: l.group || 'Sundry Debtors',
+      openingBalance: Number(l.openingBalance) || 0,
+      address: l.address || '',
+      email: l.email || '',
+      hsnCode: l.hsnCode || '',
+      gstin: l.gstin || '',
+      contactNo: l.contactNo || '',
+      registrationType: l.registrationType || 'Regular',
+      gstType: l.gstType || 'CGST/SGST',
+      cgstRate: Number(l.cgstRate) || 0,
+      sgstRate: Number(l.sgstRate) || 0,
+      igstRate: Number(l.igstRate) || 0
+    });
     setEditingId(l.id);
     setIsCreating(true);
   };

@@ -73,7 +73,7 @@ export default function AccountingGuide() {
         role: 'ai',
         text: "Hello! I'm your AI Accounting Assistant. You can ask me how to record transactions, clarify accounting scenarios, or get general accounting advice. How can I help you today?"
       }];
-      setMessages(welcome);
+      setMessages(welcome as ChatMessage[]);
       localStorage.removeItem(storageKey);
     }
   };

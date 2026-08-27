@@ -62,7 +62,20 @@ export default function Companies() {
   };
 
   const handleEdit = (c: Company) => {
-    setForm(c);
+    setForm({
+      name: c.name || '',
+      address: c.address || '',
+      gstin: c.gstin || '',
+      pan: c.pan || '',
+      email: c.email || '',
+      phone: c.phone || '',
+      financialYearStart: c.financialYearStart || '2025-04-01',
+      booksBeginFrom: c.booksBeginFrom || '2025-04-01',
+      bankName: c.bankName || '',
+      accountNumber: c.accountNumber || '',
+      ifscCode: c.ifscCode || '',
+      branchName: c.branchName || ''
+    });
     setEditingId(c.id);
     setIsCreating(true);
   };

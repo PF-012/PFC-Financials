@@ -194,7 +194,18 @@ const styles = StyleSheet.create({
 
 interface VoucherPDFProps {
   voucher: Voucher;
-  company: { name: string; address?: string; phone?: string; email?: string; gstin?: string; pan?: string; };
+  company: {
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    gstin?: string;
+    pan?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    branchName?: string;
+  };
   party?: Ledger | null;
   account?: Ledger | null;
 }
