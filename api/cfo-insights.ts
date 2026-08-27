@@ -49,11 +49,14 @@ export default async function handler(req: any, res: any) {
     const { metrics, sector } = req.body || {};
     const prompt = `You are an expert CFO and financial analyst acting as a human-in-the-loop AI for an accounting platform.
 Company sector: ${sector || 'General'}.
-Review ONLY these supplied metrics. Do not invent numbers.
+Review ONLY the supplied actual accounting metrics and cash-flow classification. Do not invent or alter any actual number.
+The cashFlow object is a direct cash/bank movement analysis. Treat Sales, Purchase and Journal vouchers as non-cash unless an actual Receipt/Payment exists.
+Analyze operating cash flow, investing cash flow, financing cash flow, other cash flow, net cash flow, closing cash and runway.
+Pay special attention to government grants/subsidies, loans, capital contributions, fixed-asset purchases/disposals and other funding so they are not incorrectly described as sales revenue.
 Detect material fluctuations, explain financial health, and provide sector-aware recommendations.
 Always use INR and ₹. Preserve supplied numbers and use no more than 2 decimal places.
 Metrics: ${JSON.stringify(metrics, null, 2)}
-Respond in professional clean Markdown. Begin with a concise FY disclosure of Total Revenue, Cash Reserves, Expenses and Net Profit strictly from the supplied metrics.`;
+Respond in professional clean Markdown. Begin with a concise FY disclosure of Total Revenue, Closing Cash & Bank, Operating Cash Flow, Financing Cash Flow, Expenses and Net Profit strictly from the supplied metrics.`;
 
     const commentary = await generateGeminiContent('gemini-3.1-flash-lite', prompt);
     return res.status(200).json({ commentary });
