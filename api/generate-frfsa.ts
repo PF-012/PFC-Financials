@@ -48,17 +48,19 @@ export default async function handler(req: any, res: any) {
   try {
     const { metrics, sector, companyName } = req.body || {};
     const prompt = `You are an expert financial modeling AI generating a Financial Reporting, Forecasting & Strategic Analysis (FRFSA) model for ${companyName || 'the company'} in the ${sector || 'General'} sector.
-Use the supplied current metrics as the factual base. Generate a logical synthesized 3-year forecast, assumptions, sector-specific ratios and simplified DCF valuation.
+Use the supplied current accounting metrics and classified cash-flow statement as the factual base. Do not alter current actuals.
+The cashFlow object represents direct cash/bank movements. Sales, Purchase and Journal vouchers are not cash flows by themselves. Government grants/subsidies, loans, capital contributions, fixed-asset disposals/acquisitions and other funding must remain in their classified cash-flow sections rather than being treated as sales revenue.
+Generate a logical synthesized 3-year forecast, assumptions, sector-specific ratios and simplified DCF valuation. Clearly use current cash flow and funding mix when forming assumptions.
 Current Metrics: ${JSON.stringify(metrics, null, 2)}
 Return ONLY valid JSON matching this structure:
 {
-  "executiveSummary":"short disclosure of current revenue, cash and profit based strictly on supplied metrics",
+  "executiveSummary":"short disclosure of current revenue, closing cash, operating cash flow, financing cash flow and profit based strictly on supplied metrics",
   "assumptions":[{"parameter":"Revenue Growth Rate","value":"15%","rationale":"Reason"}],
   "forecasting":[{"lineItem":"Revenue","y0":"100000","y1":"115000","y2":"132250","y3":"152087"},{"lineItem":"COGS","y0":"...","y1":"...","y2":"...","y3":"..."},{"lineItem":"EBITDA","y0":"...","y1":"...","y2":"...","y3":"..."},{"lineItem":"Free Cash Flow","y0":"...","y1":"...","y2":"...","y3":"..."}],
   "ratios":[{"name":"Gross Margin","value":"45%","benchmark":"40%","analysis":"Analysis"}],
   "dcf":{"wacc":"12.5%","terminalGrowth":"3.0%","enterpriseValue":"₹5,000,000","equityValue":"₹4,800,000","summary":"Summary"}
 }
-Use INR/₹ for currency and make all figures flow logically from the supplied metrics.`;
+Use INR/₹ for currency and make all figures flow logically from the supplied metrics. Do not present funding receipts such as grants or loans as operating sales revenue.`;
 
     const raw = await generateGeminiContent('gemini-3.1-flash-lite', prompt);
     const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
