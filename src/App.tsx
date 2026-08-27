@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useState } from 'react';
 import SplashScreen from './components/SplashScreen';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
@@ -25,13 +24,7 @@ const AuditTrail = React.lazy(() => import('./pages/AuditTrail'));
 const CFODashboard = React.lazy(() => import('./pages/CFODashboard'));
 const AccountingGuide = React.lazy(() => import('./pages/AccountingGuide'));
 
-function ErrorFallback({
-  error,
-  resetErrorBoundary,
-}: {
-  error: Error;
-  resetErrorBoundary: () => void;
-}) {
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
@@ -53,29 +46,16 @@ function ErrorFallback({
 function AppContent() {
   const { user } = useAuth();
   const [showSplash, setShowSplash] = useState(() => {
-    try {
-      return localStorage.getItem('pfc_splash_shown') !== 'true';
-    } catch {
-      return true;
-    }
+    try { return localStorage.getItem('pfc_splash_shown') !== 'true'; } catch { return true; }
   });
 
   const handleSplashComplete = () => {
-    try {
-      localStorage.setItem('pfc_splash_shown', 'true');
-    } catch {
-      // Continue normally if browser storage is unavailable.
-    }
+    try { localStorage.setItem('pfc_splash_shown', 'true'); } catch { /* storage unavailable */ }
     setShowSplash(false);
   };
 
-  // Once the user is authenticated, never display the splash again.
   if (user) return <Application />;
-
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
-
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
   return <Application />;
 }
 
@@ -83,13 +63,7 @@ function Application() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <React.Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
-            </div>
-          }
-        >
+        <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" /></div>}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Layout />}>
@@ -120,9 +94,7 @@ function Application() {
 function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <AuthProvider><AppContent /></AuthProvider>
     </ErrorBoundary>
   );
 }
