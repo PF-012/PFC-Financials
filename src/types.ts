@@ -11,6 +11,7 @@ export type VoucherType =
   | 'Purchase Order';
 
 export type LicenseType = 'free' | 'monthly';
+export type CashFlowCategory = 'Operating' | 'Other' | 'Investing' | 'Financing';
 
 export interface CompanySettings {
   voucherNumbering: 'auto' | 'manual';
@@ -56,6 +57,7 @@ export interface Ledger {
   name: string;
   group: string;
   openingBalance: number;
+  cashFlowCategory?: CashFlowCategory;
   address?: string;
   email?: string;
   hsnCode?: string;
