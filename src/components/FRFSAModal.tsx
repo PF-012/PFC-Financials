@@ -1,212 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { X, Loader2, FileSpreadsheet, TrendingUp, AlertCircle, Calculator } from 'lucide-react';
-import { Company } from '../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, Loader2, FileSpreadsheet, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Company, Ledger, Voucher } from '../types';
+import { buildThreeStatementModel, ThreeStatementModel } from '../lib/threeStatement';
 
-interface FRFSAModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  activeCompany: Company;
-  metrics: any;
-}
+interface FRFSAModalProps { isOpen:boolean; onClose:()=>void; activeCompany:Company; metrics:any; vouchers:Voucher[]; ledgers:Ledger[]; financialYear:{start:string;end:string;label?:string}; }
+const money=(v:number)=>`₹${Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:0})}`;
+const pct=(v:number)=>`${Number(v||0).toFixed(1)}%`;
+function Table({rows}:{rows:any[]}){return <div className="overflow-x-auto border border-gray-200 rounded-lg"><table className="w-full text-sm"><tbody>{rows.map((r,i)=><tr key={i} className={`border-b last:border-b-0 ${r.bold?'font-bold bg-gray-50':''}`}><td className="px-4 py-2" style={{paddingLeft:16+(r.indent||0)*18}}>{r.label}{r.note&&<span className="block text-[10px] font-normal text-amber-600">{r.note}</span>}</td><td className={`px-4 py-2 text-right font-mono ${r.value<0?'text-red-700':''}`}>{money(r.value)}</td></tr>)}</tbody></table></div>}
+function forecast(m:ThreeStatementModel){const r=m.pnl.revenue,c=r?m.pnl.cogs/r:0,o=r?m.pnl.operatingExpenses/r:0,oi=r?m.pnl.otherIncome/r:0,nwc=r?m.workingCapital.netWorkingCapital/r:0,g=.10,w=.12,tg=.03;const ys=[0,1,2,3].map(y=>{const rev=r*Math.pow(1+g,y),cogs=rev*c,opex=rev*o,other=rev*oi,ebitda=rev-cogs-opex+other,ebit=ebitda-m.pnl.depreciation,pbt=ebit-m.pnl.financeCost,tax=Math.max(0,pbt*.25),pat=pbt-tax,wn=rev*nwc,prev=y?r*Math.pow(1+g,y-1)*nwc:m.workingCapital.netWorkingCapital,dn=wn-prev,capex=y?m.cashFlow.investingOutflows*Math.pow(1+g,y-1):m.cashFlow.investingOutflows,fcf=pat+m.pnl.depreciation-capex-dn;return{y,rev,cogs,opex,other,ebitda,ebit,pbt,tax,pat,dn,capex,fcf}});const tv=ys[3].fcf*(1+tg)/(w-tg),ev=ys.slice(1).reduce((s,x)=>s+x.fcf/Math.pow(1+w,x.y),0)+tv/Math.pow(1+w,3);return{ys,g,c,o,nwc,w,tg,tv,ev}}
 
-export default function FRFSAModal({ isOpen, onClose, activeCompany, metrics }: FRFSAModalProps) {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'assumptions' | 'forecasting' | 'ratios' | 'dcf'>('assumptions');
-
-  useEffect(() => {
-    if (isOpen && !data && !loading) {
-      generateFRFSA();
-    }
-  }, [isOpen]);
-
-  const generateFRFSA = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch('/api/generate-frfsa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          metrics, 
-          sector: activeCompany.settings?.sector || 'General',
-          companyName: activeCompany.name
-        })
-      });
-      const result = await response.json();
-      if (result.error) throw new Error(result.error);
-      setData(result.data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate financial model.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-        <div className="p-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 rounded-t-xl">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
-            <h2 className="text-xl font-bold text-gray-800">Financial Reporting, Forecasting & Strategic Analysis (FRFSA)</h2>
-            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium ml-2">
-              Sector: {activeCompany.settings?.sector || 'General'}
-            </span>
-          </div>
-          <button onClick={onClose} className="text-gray-500 hover:bg-gray-200 p-2 rounded-full transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-hidden flex flex-col bg-gray-100">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-full p-12">
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-              <h3 className="text-lg font-medium text-gray-800">Generating Financial Model...</h3>
-              <p className="text-gray-500 text-sm mt-2 max-w-md text-center">
-                AI is constructing a comprehensive DCF valuation, projecting revenue forecasts, and performing ratio analysis tailored to the {activeCompany.settings?.sector || 'General'} sector.
-              </p>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center h-full p-6 text-red-600 flex-col gap-3">
-              <AlertCircle className="w-10 h-10" />
-              <p>{error}</p>
-              <button onClick={generateFRFSA} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Retry</button>
-            </div>
-          ) : data ? (
-            <div className="flex flex-col h-full">
-              {data.executiveSummary && (
-                <div className="bg-blue-50 border-l-4 border-blue-600 p-4 m-4 mb-0 rounded-r shadow-sm">
-                  <h3 className="text-blue-900 font-semibold mb-1 text-sm uppercase tracking-wider">Current FY Disclosure & Basis</h3>
-                  <p className="text-sm text-blue-800 leading-relaxed">{data.executiveSummary}</p>
-                </div>
-              )}
-              <div className="flex border-b border-gray-300 bg-white px-4 mt-4">
-                <button onClick={() => setActiveTab('assumptions')} className={`px-4 py-3 font-medium text-sm border-b-2 ${activeTab === 'assumptions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>Assumptions</button>
-                <button onClick={() => setActiveTab('forecasting')} className={`px-4 py-3 font-medium text-sm border-b-2 ${activeTab === 'forecasting' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>Forecasting</button>
-                <button onClick={() => setActiveTab('ratios')} className={`px-4 py-3 font-medium text-sm border-b-2 ${activeTab === 'ratios' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>Ratio Analysis</button>
-                <button onClick={() => setActiveTab('dcf')} className={`px-4 py-3 font-medium text-sm border-b-2 ${activeTab === 'dcf' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>DCF Valuation</button>
-              </div>
-              
-              <div className="flex-1 overflow-auto p-4 bg-white m-4 rounded shadow-sm border border-gray-300">
-                {activeTab === 'assumptions' && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Key Model Assumptions</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left border-collapse">
-                        <thead className="bg-gray-100 border-b-2 border-gray-300">
-                          <tr>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Parameter</th>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Value</th>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Rationale ({activeCompany.settings?.sector || 'General'} Sector)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.assumptions?.map((item: any, idx: number) => (
-                            <tr key={idx} className="hover:bg-gray-50">
-                              <td className="px-4 py-2 border border-gray-300 font-medium">{item.parameter}</td>
-                              <td className="px-4 py-2 border border-gray-300 text-blue-600 font-mono">{item.value}</td>
-                              <td className="px-4 py-2 border border-gray-300 text-gray-600">{item.rationale}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-                
-                {activeTab === 'forecasting' && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">3-Year Financial Forecast</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-right border-collapse">
-                        <thead className="bg-gray-100 border-b-2 border-gray-300">
-                          <tr>
-                            <th className="px-4 py-2 border border-gray-300 text-left font-bold text-gray-700">Line Item (in ₹)</th>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Current Year (Y0)</th>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Year 1</th>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Year 2</th>
-                            <th className="px-4 py-2 border border-gray-300 font-bold text-gray-700">Year 3</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.forecasting?.map((item: any, idx: number) => (
-                            <tr key={idx} className="hover:bg-gray-50">
-                              <td className="px-4 py-2 border border-gray-300 text-left font-medium">{item.lineItem}</td>
-                              <td className="px-4 py-2 border border-gray-300 font-mono">{item.y0}</td>
-                              <td className="px-4 py-2 border border-gray-300 font-mono">{item.y1}</td>
-                              <td className="px-4 py-2 border border-gray-300 font-mono">{item.y2}</td>
-                              <td className="px-4 py-2 border border-gray-300 font-mono">{item.y3}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-                
-                {activeTab === 'ratios' && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Sector-Specific Ratio Analysis</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {data.ratios?.map((item: any, idx: number) => (
-                        <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
-                          <h4 className="font-semibold text-gray-800 mb-2">{item.name}</h4>
-                          <div className="flex justify-between items-end mb-2">
-                            <span className="text-2xl font-bold font-mono text-blue-700">{item.value}</span>
-                            <span className="text-sm text-gray-500 mb-1">Benchmark: {item.benchmark}</span>
-                          </div>
-                          <p className="text-xs text-gray-600 border-t pt-2 mt-2">{item.analysis}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {activeTab === 'dcf' && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Discounted Cash Flow (DCF) Valuation</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 font-semibold text-gray-700">Valuation Metrics</div>
-                        <div className="p-4 space-y-3 bg-white">
-                          <div className="flex justify-between border-b border-gray-100 pb-2">
-                            <span className="text-gray-600">Cost of Capital (WACC)</span>
-                            <span className="font-mono font-medium">{data.dcf?.wacc}</span>
-                          </div>
-                          <div className="flex justify-between border-b border-gray-100 pb-2">
-                            <span className="text-gray-600">Terminal Growth Rate</span>
-                            <span className="font-mono font-medium">{data.dcf?.terminalGrowth}</span>
-                          </div>
-                          <div className="flex justify-between pt-2">
-                            <span className="font-semibold text-gray-800">Enterprise Value</span>
-                            <span className="font-mono font-bold text-emerald-700">{data.dcf?.enterpriseValue}</span>
-                          </div>
-                          <div className="flex justify-between pt-2">
-                            <span className="font-semibold text-gray-800">Implied Equity Value</span>
-                            <span className="font-mono font-bold text-emerald-700">{data.dcf?.equityValue}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm flex flex-col justify-center">
-                        <Calculator className="w-8 h-8 text-blue-500 mb-3 mx-auto" />
-                        <h4 className="text-center font-medium text-gray-800 mb-2">Valuation Summary</h4>
-                        <p className="text-sm text-gray-600 text-center">{data.dcf?.summary}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+export default function FRFSAModal({isOpen,onClose,activeCompany,metrics,vouchers,ledgers,financialYear}:FRFSAModalProps){const[model,setModel]=useState<ThreeStatementModel|null>(null);const[tab,setTab]=useState('overview');const[error,setError]=useState('');useEffect(()=>{if(!isOpen)return;try{setModel(buildThreeStatementModel(vouchers,ledgers,financialYear));setError('')}catch(e:any){setError(e?.message||'Unable to build model')}} ,[isOpen,vouchers,ledgers,financialYear]);const f=useMemo(()=>model?forecast(model):null,[model]);if(!isOpen)return null;const tabs=[['overview','Overview'],['pnl','Profit & Loss'],['bs','Balance Sheet'],['cash','Cash Flow'],['wc','Working Capital'],['forecast','3-Year Forecast'],['ratios','Ratios'],['dcf','DCF'],['checks','Checks']];return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-3 md:p-6"><div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[94vh] flex flex-col"><div className="p-4 flex items-center justify-between border-b bg-gray-50"><div><div className="flex items-center gap-2"><FileSpreadsheet className="w-6 h-6 text-emerald-700"/><h2 className="text-xl font-bold">FRFSA — Integrated 3-Statement Model</h2></div><p className="text-xs text-gray-500 mt-1">{activeCompany.name} · {financialYear.label||`${financialYear.start} to ${financialYear.end}`} · calculated from PFC accounting data</p></div><button onClick={onClose} className="p-2 hover:bg-gray-200 rounded"><X/></button></div>{error?<div className="p-12 text-center text-red-600"><AlertCircle className="mx-auto mb-3"/><p>{error}</p></div>:!model?<div className="p-16 text-center"><Loader2 className="animate-spin mx-auto mb-3"/><p>Building statements…</p></div>:<><div className="overflow-x-auto border-b"><div className="flex min-w-max px-2">{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`px-3 py-3 text-xs md:text-sm border-b-2 ${tab===k?'border-blue-700 text-blue-700':'border-transparent text-gray-600'}`}>{l}</button>)}</div></div><div className="flex-1 overflow-auto p-4 md:p-6 bg-gray-50">
+{tab==='overview'&&<div className="space-y-5"><div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[['Revenue',model.pnl.revenue],['EBITDA',model.pnl.ebitda],['PAT',model.pnl.netIncome],['Operating CF',model.cashFlow.operatingCashFlow],['Closing Cash',model.cashFlow.closingCashBank]].map(([l,v])=><div className="bg-white border rounded-lg p-4" key={l as string}><p className="text-xs text-gray-500">{l}</p><p className="text-xl font-bold">{money(v as number)}</p></div>)}</div><div className="bg-white border rounded-lg p-5"><h3 className="font-bold">Model Basis</h3><p className="text-sm text-gray-700 mt-2 leading-6">Historical statements are calculated from ledger opening balances plus voucher postings. The cash-flow statement uses actual Receipt/Payment movements and the CFO classifications. Grants, loans and capital funding are not treated as sales. The forecast and DCF are transparent formula-driven baseline scenarios; AI is not used to fabricate historical numbers.</p></div></div>}
+{tab==='pnl'&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold mb-1">Statement of Profit & Loss</h3><p className="text-xs text-gray-500 mb-4">Actual selected financial year · ₹</p><Table rows={model.pnl.rows}/></div>}
+{tab==='bs'&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold mb-4">Balance Sheet — {financialYear.end}</h3><div className="grid lg:grid-cols-2 gap-8"><div><h4 className="font-bold mb-2">Assets</h4><Table rows={model.balanceSheet.assets}/></div><div><h4 className="font-bold mb-2">Liabilities & Equity</h4><Table rows={[...model.balanceSheet.liabilities,...model.balanceSheet.equity]}/></div></div><div className={`mt-4 p-3 rounded text-sm ${model.checks.balanceSheetBalances?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-800'}`}>Balance check: <b>{money(model.balanceSheet.balanceCheck)}</b></div></div>}
+{tab==='cash'&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold">Detailed Cash Flow Statement</h3><p className="text-xs text-gray-500 mb-4">Direct cash/bank movements · ₹</p><div className="grid lg:grid-cols-2 gap-7"><div><h4 className="font-bold mb-2">Operating Activities</h4><Table rows={[{label:'Operating Inflows',value:model.cashFlow.operatingInflows},{label:'Operating Outflows',value:-model.cashFlow.operatingOutflows},{label:'Net Operating Cash Flow',value:model.cashFlow.operatingCashFlow,bold:true}]}/></div><div><h4 className="font-bold mb-2">Investing Activities</h4><Table rows={[{label:'Investing Inflows',value:model.cashFlow.investingInflows},{label:'Investing Outflows',value:-model.cashFlow.investingOutflows},{label:'Net Investing Cash Flow',value:model.cashFlow.investingCashFlow,bold:true}]}/></div><div><h4 className="font-bold mb-2">Financing Activities</h4><Table rows={[{label:'Financing Inflows',value:model.cashFlow.financingInflows},{label:'Financing Outflows',value:-model.cashFlow.financingOutflows},{label:'Net Financing Cash Flow',value:model.cashFlow.financingCashFlow,bold:true}]}/></div><div><h4 className="font-bold mb-2">Other & Reconciliation</h4><Table rows={[{label:'Other Inflows',value:model.cashFlow.otherInflows},{label:'Other Outflows',value:-model.cashFlow.otherOutflows},{label:'Net Other Cash Flow',value:model.cashFlow.otherCashFlow},{label:'Net Change in Cash',value:model.cashFlow.netCashFlow,bold:true},{label:'Opening Cash & Bank',value:model.cashFlow.openingCashBank},{label:'Closing Cash & Bank',value:model.cashFlow.closingCashBank,bold:true}]}/></div></div></div>}
+{tab==='wc'&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold mb-5">Working Capital Analysis</h3><div className="grid md:grid-cols-3 gap-4">{[['Trade Receivables',model.workingCapital.receivables],['Inventory',model.workingCapital.inventory],['Trade Payables',model.workingCapital.payables],['Other Current Assets',model.workingCapital.otherCurrentAssets],['Other Current Liabilities',model.workingCapital.otherCurrentLiabilities],['Net Working Capital',model.workingCapital.netWorkingCapital]].map(([l,v])=><div className="border rounded p-4" key={l as string}><p className="text-xs text-gray-500">{l}</p><p className="text-xl font-bold">{money(v as number)}</p></div>)}</div><p className="text-sm mt-5 pt-4 border-t"><b>Change in NWC:</b> {money(model.workingCapital.changeInNwc)}</p></div>}
+{tab==='forecast'&&f&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold">3-Year Linked Management Forecast</h3><p className="text-xs text-gray-500 mb-4">Y0 is actual. Baseline assumptions: 10% revenue growth, historical cost ratios, 25% tax, historical investing run-rate and working-capital ratio.</p><div className="overflow-x-auto"><table className="w-full text-sm border"><thead className="bg-gray-100"><tr><th className="p-2 border text-left">Line Item</th>{f.ys.map(y=><th className="p-2 border text-right" key={y.y}>{y.y===0?'Actual Y0':`Year ${y.y}`}</th>)}</tr></thead><tbody>{[['Revenue','rev'],['COGS','cogs'],['Other Income','other'],['Operating Expenses','opex'],['EBITDA','ebitda'],['EBIT','ebit'],['Profit Before Tax','pbt'],['Tax','tax'],['Profit After Tax','pat'],['Change in NWC','dn'],['Capital Expenditure','capex'],['Free Cash Flow','fcf']].map(([l,k])=><tr className="border-t" key={l}><td className="p-2 border font-medium">{l}</td>{f.ys.map(y=><td className="p-2 border text-right font-mono" key={y.y}>{money((y as any)[k])}</td>)}</tr>)}</tbody></table></div></div>}
+{tab==='ratios'&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold mb-5">Key Financial Ratios</h3><div className="grid md:grid-cols-3 gap-4">{[['Gross Margin',model.pnl.revenue?model.pnl.grossProfit/model.pnl.revenue*100:0],['EBITDA Margin',model.pnl.revenue?model.pnl.ebitda/model.pnl.revenue*100:0],['Net Profit Margin',model.pnl.revenue?model.pnl.netIncome/model.pnl.revenue*100:0],['Operating CF Margin',model.pnl.revenue?model.cashFlow.operatingCashFlow/model.pnl.revenue*100:0],['NWC / Revenue',model.pnl.revenue?model.workingCapital.netWorkingCapital/model.pnl.revenue*100:0],['Asset Turnover',model.balanceSheet.totalAssets?model.pnl.revenue/model.balanceSheet.totalAssets*100:0]].map(([l,v])=><div className="border rounded p-4" key={l as string}><p className="text-xs text-gray-500">{l}</p><p className="text-2xl font-bold">{Number(v).toFixed(1)}{l==='Asset Turnover'?'x':'%'}</p></div>)}</div></div>}
+{tab==='dcf'&&f&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold mb-2">DCF Valuation — Baseline Scenario</h3><p className="text-xs text-gray-500 mb-5">Formula-driven from forecast free cash flow.</p><div className="grid md:grid-cols-2 gap-6"><Table rows={[{label:'WACC',value:f.w*100},{label:'Terminal Growth',value:f.tg*100},{label:'Year 3 FCF',value:f.ys[3].fcf},{label:'Terminal Value',value:f.tv},{label:'Enterprise Value',value:f.ev,bold:true}]}/><div className="bg-gray-50 border rounded p-4 text-sm leading-6"><b>Formula:</b><br/>FCF = PAT + D&A − Capex − Change in NWC.<br/>Terminal Value = Year 3 FCF × (1 + g) / (WACC − g).<br/>Enterprise Value = PV of forecast FCF + PV of Terminal Value.<br/><span className="text-xs text-gray-500">WACC and terminal growth are baseline assumptions and should be reviewed by the Finance Manager before valuation use.</span></div></div></div>}
+{tab==='checks'&&<div className="bg-white border rounded-lg p-5"><h3 className="text-lg font-bold mb-4">Checks & Audit Notes</h3><div className="space-y-3"><div className={`p-4 rounded flex gap-3 ${model.checks.balanceSheetBalances?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-800'}`}>{model.checks.balanceSheetBalances?<CheckCircle2/>:<AlertTriangle/>}<span><b>Balance Sheet:</b> {model.checks.balanceSheetBalances?'Balances.':'Difference exists; review warnings.'}</span></div><div className={`p-4 rounded flex gap-3 ${model.checks.cashReconciles?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-800'}`}>{model.checks.cashReconciles?<CheckCircle2/>:<AlertTriangle/>}<span><b>Cash Reconciliation:</b> {model.checks.cashReconciles?'Agrees.':'Difference exists between ledger cash and classified cash flow.'}</span></div>{model.checks.warnings.map((w,i)=><div className="p-3 bg-gray-50 border rounded text-sm" key={i}>{w}</div>)}</div></div>}
+</div></>}</div></div>;
 }
