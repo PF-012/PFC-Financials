@@ -20,6 +20,7 @@ export default function LedgerFormModal({ isOpen, onClose, ledgerId, onSave }: L
     name: '',
     group: 'Sundry Debtors',
     openingBalance: 0,
+    cashFlowCategory: undefined,
     address: '',
     email: '',
     hsnCode: '',
@@ -105,6 +106,17 @@ export default function LedgerFormModal({ isOpen, onClose, ledgerId, onSave }: L
                 <div>
                    <label className="block text-sm font-medium text-gray-700">Opening Balance</label>
                    <input type="number" step="0.01" value={form.openingBalance || ''} onChange={e => setForm({...form, openingBalance: Number(e.target.value)})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm" placeholder="0.00" />
+                </div>
+                <div>
+                   <label className="block text-sm font-medium text-gray-700">CFO Cash Flow Classification</label>
+                   <select value={form.cashFlowCategory || ''} onChange={e => setForm({...form, cashFlowCategory: e.target.value || undefined})} className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-900 focus:border-blue-900 sm:text-sm">
+                      <option value="">Auto-detect from ledger</option>
+                      <option value="Operating">Operating</option>
+                      <option value="Other">Other</option>
+                      <option value="Investing">Investing</option>
+                      <option value="Financing">Financing</option>
+                   </select>
+                   <p className="mt-1 text-xs text-gray-500">Use this when a ledger needs a specific CFO classification; otherwise PFC will infer it from the ledger group/name.</p>
                 </div>
              </div>
           </div>
