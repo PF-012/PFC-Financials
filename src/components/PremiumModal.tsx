@@ -98,13 +98,6 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
         license: newLicense
       });
 
-      // Mark the license key as used after successful activation.
-      if (licenseKey !== '12345' && licenseKey !== '99999') {
-        await updateDoc(doc(db, 'validKeys', licenseKey), {
-          used: true,
-          usedAt: new Date().toISOString()
-        });
-      }
 
       setSuccess('License key verified successfully! Your account has been upgraded to Premium.');
       setTimeout(() => {
