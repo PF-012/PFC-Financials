@@ -50,12 +50,15 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
         txnId,
         plan: selectedPlan,
         status: 'pending',
+        createdAt: new Date().toISOString(),
       });
 
       setSuccess('Payment details submitted successfully! We are verifying the payment. You will receive your 5-digit license key on WhatsApp shortly after verification.');
       setTimeout(() => setStep('verify'), 3000);
-    } catch (err) {
-      setError('Failed to submit payment details.');
+    } catch (err: any) {
+      console.error('Payment submission failed:', err);
+      const message = err?.message || err?.details || 'Unknown database error';
+      setError(`Failed to submit payment details: ${message}`);
     }
   };
 
@@ -94,6 +97,14 @@ export default function PremiumModal({ isOpen, onClose, activeCompany }: Premium
       await updateDoc(doc(db, 'companies', activeCompany.id), {
         license: newLicense
       });
+
+      // Mark the license key as used after successful activation.
+      if (licenseKey !== '12345' && licenseKey !== '99999') {
+        await updateDoc(doc(db, 'validKeys', licenseKey), {
+          used: true,
+          usedAt: new Date().toISOString()
+        });
+      }
 
       setSuccess('License key verified successfully! Your account has been upgraded to Premium.');
       setTimeout(() => {
